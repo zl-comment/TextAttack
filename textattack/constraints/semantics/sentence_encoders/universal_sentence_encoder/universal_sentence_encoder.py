@@ -16,10 +16,11 @@ class UniversalSentenceEncoder(SentenceEncoder):
 
     def __init__(self, threshold=0.8, large=False, metric="angular", **kwargs):
         super().__init__(threshold=threshold, metric=metric, **kwargs)
+        #修改模型到本地路径而不从网上下载
         if large:
-            tfhub_url = "https://tfhub.dev/google/universal-sentence-encoder-large/5"
+            tfhub_url = "/home/darui/ZLCODE/google/universal-sentence-encoder-large"
         else:
-            tfhub_url = "https://tfhub.dev/google/universal-sentence-encoder/3"
+            tfhub_url = "/home/darui/ZLCODE/google/universal-sentence-encoder"
 
         self._tfhub_url = tfhub_url
         # Lazily load the model
@@ -27,6 +28,7 @@ class UniversalSentenceEncoder(SentenceEncoder):
 
     def encode(self, sentences):
         if not self.model:
+            print(self._tfhub_url)
             self.model = hub.load(self._tfhub_url)
         encoding = self.model(sentences)
 
