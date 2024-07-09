@@ -113,7 +113,7 @@ class WordEmbedding(AbstractWordEmbedding):
             on the fly for `nearest_neighbours` method, which is costly.
     """
 
-    PATH = "/home/darui/word_embeddings"
+    PATH = "/home/darui/ZLCODE/word_embeddings"
 
     def __init__(self, embedding_matrix, word2index, index2word, nn_matrix=None):
         self.embedding_matrix = embedding_matrix
