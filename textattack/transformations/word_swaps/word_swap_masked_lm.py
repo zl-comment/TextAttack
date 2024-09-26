@@ -12,7 +12,7 @@ from transformers import AutoModelForMaskedLM, AutoTokenizer
 from textattack.shared import utils
 
 from .word_swap import WordSwap
-
+import os
 
 class WordSwapMaskedLM(WordSwap):
     """Generate potential replacements for a word using a masked language
@@ -67,14 +67,17 @@ class WordSwapMaskedLM(WordSwap):
         self.max_candidates = max_candidates
         self.min_confidence = min_confidence
         self.batch_size = batch_size
-
+        #加载预训练的模型的tokenizer和model
         if isinstance(masked_language_model, str):
-            self._language_model = AutoModelForMaskedLM.from_pretrained(
-                masked_language_model
-            )
-            self._lm_tokenizer = AutoTokenizer.from_pretrained(
-                masked_language_model, use_fast=True
-            )
+            masked_language_model_cache = "/home/cyh/ZLCODE/google/bert-base-uncased"
+            if os.path.exists(masked_language_model_cache):  # 如果是本地路径
+                print(f"Loading local model from {masked_language_model_cache}")
+                self._language_model = AutoModelForMaskedLM.from_pretrained(masked_language_model_cache)
+                self._lm_tokenizer = AutoTokenizer.from_pretrained(masked_language_model_cache, use_fast=True)
+            else:  # 从Hugging Face加载模型
+                print(f"Loading model from Hugging Face: {masked_language_model}")
+                self._language_model = AutoModelForMaskedLM.from_pretrained(masked_language_model)
+                self._lm_tokenizer = AutoTokenizer.from_pretrained(masked_language_model, use_fast=True)
         else:
             self._language_model = masked_language_model
             if tokenizer is None:
@@ -103,14 +106,14 @@ class WordSwapMaskedLM(WordSwap):
         return encoding.to(utils.device)
 
     def _bae_replacement_words(self, current_text, indices_to_modify):
-        """Get replacement words for the word we want to replace using BAE
-        method.
+        """使用 BAE 方法获取要替换的单词的替换词。
 
-        Args:
-            current_text (AttackedText): Text we want to get replacements for.
-            index (int): index of word we want to replace
+        参数:
+            current_text (AttackedText): 我们要取替换词的文本。
+            indices_to_modify (list): 我们要替换的单词的索引列表。
         """
         masked_texts = []
+        # 为每个要修改的索引创建掩码版本的文本
         for index in indices_to_modify:
             masked_text = current_text.replace_word_at_index(
                 index, self._lm_tokenizer.mask_token
@@ -118,22 +121,26 @@ class WordSwapMaskedLM(WordSwap):
             masked_texts.append(masked_text.text)
 
         i = 0
-        # 2-D list where for each index to modify we have a list of replacement words
+        # 2D 列表，其中每个要修改的索引都有一个替换词列表
         replacement_words = []
         while i < len(masked_texts):
-            inputs = self._encode_text(masked_texts[i : i + self.batch_size])
+            # 批量编码掩码文本
+            inputs = self._encode_text(masked_texts[i: i + self.batch_size])
             ids = inputs["input_ids"].tolist()
             with torch.no_grad():
+                # 从语言模型获取预测
                 preds = self._language_model(**inputs)[0]
 
             for j in range(len(ids)):
                 try:
-                    # Need try-except b/c mask-token located past max_length might be truncated by tokenizer
+                    # 找到掩码标记的索引
                     masked_index = ids[j].index(self._lm_tokenizer.mask_token_id)
                 except ValueError:
+                    # 如果未找到掩码标记，则附加一个空列表
                     replacement_words.append([])
                     continue
 
+                # 获取掩码标记的 logits 和概率
                 mask_token_logits = preds[j, masked_index]
                 mask_token_probs = torch.softmax(mask_token_logits, dim=0)
                 ranked_indices = torch.argsort(mask_token_probs, descending=True)
@@ -141,24 +148,27 @@ class WordSwapMaskedLM(WordSwap):
                 for _id in ranked_indices:
                     _id = _id.item()
                     word = self._lm_tokenizer.convert_ids_to_tokens(_id)
+                    # 检查单词是否为子句，并在必要时去除 BPE 伪影
                     if utils.check_if_subword(
-                        word,
-                        self._language_model.config.model_type,
-                        (masked_index == 1),
+                            word,
+                            self._language_model.config.model_type,
+                            (masked_index == 1),
                     ):
                         word = utils.strip_BPE_artifacts(
                             word, self._language_model.config.model_type
                         )
+                    # 检查单词是否符合替换条件
                     if (
-                        mask_token_probs[_id] >= self.min_confidence
-                        and utils.is_one_word(word)
-                        and not utils.check_if_punctuations(word)
+                            mask_token_probs[_id] >= self.min_confidence
+                            and utils.is_one_word(word)
+                            and not utils.check_if_punctuations(word)
                     ):
                         top_words.append(word)
 
+                    # 如果我们有足够的候选词或概率太低，则停止
                     if (
-                        len(top_words) >= self.max_candidates
-                        or mask_token_probs[_id] < self.min_confidence
+                            len(top_words) >= self.max_candidates
+                            or mask_token_probs[_id] < self.min_confidence
                     ):
                         break
 
@@ -251,17 +261,25 @@ class WordSwapMaskedLM(WordSwap):
     def _get_transformations(self, current_text, indices_to_modify):
         indices_to_modify = list(indices_to_modify)
         if self.method == "bert-attack":
+            # 编码当前文本
             current_inputs = self._encode_text(current_text.text)
+
+            # 禁用梯度计算，进行前向传播
             with torch.no_grad():
                 pred_probs = self._language_model(**current_inputs)[0][0]
+
+            # 获取每个位置的前max_candidates个预测词汇及其概率
             top_probs, top_ids = torch.topk(pred_probs, self.max_candidates)
             id_preds = top_ids.cpu()
             masked_lm_logits = pred_probs.cpu()
 
             transformed_texts = []
 
+            # 对于每个需要修改的索引
             for i in indices_to_modify:
                 word_at_index = current_text.words[i]
+
+                # 获取替换词
                 replacement_words = self._bert_attack_replacement_words(
                     current_text,
                     i,
@@ -269,6 +287,7 @@ class WordSwapMaskedLM(WordSwap):
                     masked_lm_logits=masked_lm_logits,
                 )
 
+                # 将替换词应用到原文本中
                 for r in replacement_words:
                     r = r.strip("Ġ")
                     if r != word_at_index:
@@ -276,28 +295,46 @@ class WordSwapMaskedLM(WordSwap):
                             current_text.replace_word_at_index(i, r)
                         )
 
+            # 返回变换后的文本
             return transformed_texts
 
+
+        # 如果方法是 "bae"
+
         elif self.method == "bae":
+
+            # 获取替换词
+
             replacement_words = self._bae_replacement_words(
                 current_text, indices_to_modify
             )
+
             transformed_texts = []
+
+            # 遍历每个替换词
+
             for i in range(len(replacement_words)):
                 index_to_modify = indices_to_modify[i]
                 word_at_index = current_text.words[index_to_modify]
+
+                # 遍历每个替换词的候选词
+
                 for word in replacement_words[i]:
                     word = word.strip("Ġ")
+                    # 检查替换词是否符合条件
                     if (
-                        word != word_at_index
-                        and re.search("[a-zA-Z]", word)
-                        and len(utils.words_from_text(word)) == 1
+                            word != word_at_index
+                            and re.search("[a-zA-Z]", word)
+                            and len(utils.words_from_text(word)) == 1
                     ):
+                        # 将替换词应用到原文本中
                         transformed_texts.append(
                             current_text.replace_word_at_index(index_to_modify, word)
                         )
+            # 返回变换后的文本
             return transformed_texts
         else:
+            # 如果方法未被识别，抛出异常
             raise ValueError(f"Unrecognized value {self.method} for `self.method`.")
 
     def extra_repr_keys(self):
