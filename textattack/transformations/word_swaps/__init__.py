@@ -27,3 +27,6 @@ from .word_swap_change_name import WordSwapChangeName
 
 # White box transformation
 from .word_swap_gradient_based import WordSwapGradientBased
+
+#new
+from .word_swap_masked_lm_zl import WordSwapMaskedLM_zl
