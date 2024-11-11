@@ -16,8 +16,9 @@ class UniversalSentenceEncoder(SentenceEncoder):
 
     def __init__(self, threshold=0.8, large=False, metric="angular", **kwargs):
         super().__init__(threshold=threshold, metric=metric, **kwargs)
+        print("加载模型中")
         #修改模型到本地路径而不从网上下载
-        if large:
+        if(large==True):
             tfhub_url = "/home/cyh/ZLCODE/google/universal-sentence-encoder-large"
             print("/home/cyh/ZLCODE/google/universal-sentence-encoder-large")
         else:
