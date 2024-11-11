@@ -39,6 +39,7 @@ class BERTAttackLi2020(AttackRecipe):
     def build(model_wrapper):
         # [from correspondence with the author]
         # Candidate size K is set to 48 for all data-sets.
+        #textattack/transformations/word_swaps/word_swap_masked_lm.py
         transformation = WordSwapMaskedLM(method="bert-attack", max_candidates=48)
         #
         # Don't modify the same word twice or stopwords.
@@ -71,6 +72,7 @@ class BERTAttackLi2020(AttackRecipe):
         # Since the threshold in the real world can't be determined from the training
         # data, the TextAttack implementation uses a fixed threshold - determined to
         # be 0.2 to be most fair.
+        #textattack/constraints/semantics/sentence_encoders/universal_sentence_encoder/universal_sentence_encoder.py
         use_constraint = UniversalSentenceEncoder(
             threshold=0.2,
             metric="cosine",
@@ -80,7 +82,7 @@ class BERTAttackLi2020(AttackRecipe):
         constraints.append(use_constraint)
         #
         # Goal is untargeted classification.
-        #
+        #textattack/goal_functions/classification/untargeted_classification.py
         goal_function = UntargetedClassification(model_wrapper)
         #
         # "We first select the words in the sequence which have a high significance
@@ -91,6 +93,7 @@ class BERTAttackLi2020(AttackRecipe):
         # is the sentence after replacing wi with [MASK]. Then we rank all the words
         # according to the ranking score Iwi in descending order to create word list
         # L."
+        #textattack/search_methods/greedy_word_swap_wir.py
         search_method = GreedyWordSwapWIR(wir_method="unk")
 
         return Attack(goal_function, constraints, transformation, search_method)
