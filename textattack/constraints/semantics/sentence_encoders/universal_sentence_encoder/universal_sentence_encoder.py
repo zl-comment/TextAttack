@@ -19,8 +19,10 @@ class UniversalSentenceEncoder(SentenceEncoder):
         #修改模型到本地路径而不从网上下载
         if large:
             tfhub_url = "/home/cyh/ZLCODE/google/universal-sentence-encoder-large"
+            print("/home/cyh/ZLCODE/google/universal-sentence-encoder-large")
         else:
             tfhub_url = "/home/cyh/ZLCODE/google/universal-sentence-encoder"
+            print("/home/cyh/ZLCODE/google/universal-sentence-encoder")
 
         self._tfhub_url = tfhub_url
         # Lazily load the model
