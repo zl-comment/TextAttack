@@ -249,8 +249,8 @@ class Attack:
         """
 
         indices_to_order = self.transformation(
-            current_text,
-            pre_transformation_constraints=self.pre_transformation_constraints,
+            current_text, #要攻击的文本
+            pre_transformation_constraints=self.pre_transformation_constraints, #攻击限制
             return_indices=True,
             **kwargs,
         )
@@ -271,8 +271,8 @@ class Attack:
             A filtered list of transformations where each transformation matches the constraints
         """
         transformed_texts = self.transformation(
-            current_text,
-            pre_transformation_constraints=self.pre_transformation_constraints,
+            current_text,   #要攻击的文本
+            pre_transformation_constraints=self.pre_transformation_constraints,  #攻击限制
             **kwargs,
         )
 
@@ -447,6 +447,7 @@ class Attack:
         if goal_function_result.goal_status == GoalFunctionResultStatus.SKIPPED:
             return SkippedAttackResult(goal_function_result)
         else:
+            #执行攻击
             result = self._attack(goal_function_result)
             return result
 

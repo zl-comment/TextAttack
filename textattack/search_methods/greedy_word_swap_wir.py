@@ -137,6 +137,7 @@ class GreedyWordSwapWIR(SearchMethod):
         i = 0
         cur_result = initial_result
         results = None
+        #indices_to_modify的入参在这里
         while i < len(index_order) and not search_over:
             transformed_text_candidates = self.get_transformations(
                 cur_result.attacked_text,
