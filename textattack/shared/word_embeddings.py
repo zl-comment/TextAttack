@@ -12,7 +12,7 @@ import numpy as np
 import torch
 
 from textattack.shared import utils
-
+from textattack import LocalPathConfig
 
 class AbstractWordEmbedding(utils.ReprMixin, ABC):
     """Abstract class representing word embedding used by TextAttack.
@@ -114,7 +114,7 @@ class WordEmbedding(AbstractWordEmbedding):
     """
 
     #PATH = "word_embeddings"
-    PATH = "/home/cyh/ZLCODE/word_embeddings"
+    PATH = LocalPathConfig.WORDENBEDDINGS
 
     def __init__(self, embedding_matrix, word2index, index2word, nn_matrix=None):
         self.embedding_matrix = embedding_matrix
