@@ -19,7 +19,7 @@ from .attack import Attack
 from .attacker import Attacker
 from .trainer import Trainer
 from .metrics import Metric
-
+from .localpathconfig import LocalPathConfig
 from . import (
     attack_recipes,
     attack_results,

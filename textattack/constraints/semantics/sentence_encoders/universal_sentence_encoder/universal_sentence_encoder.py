@@ -5,7 +5,7 @@ universal sentence encoder class
 
 from textattack.constraints.semantics.sentence_encoders import SentenceEncoder
 from textattack.shared.utils import LazyLoader
-
+from textattack.localpathconfig import LocalPathConfig
 hub = LazyLoader("tensorflow_hub", globals(), "tensorflow_hub")
 
 
@@ -19,10 +19,10 @@ class UniversalSentenceEncoder(SentenceEncoder):
         print("加载模型中")
         #修改模型到本地路径而不从网上下载
         if(large==True):
-            tfhub_url = "/home/cyh/ZLCODE/google/universal-sentence-encoder-large"
+            tfhub_url = LocalPathConfig.UNIVERSAL_SENTENCE_ENCODER_LARGE
             print("/home/cyh/ZLCODE/google/universal-sentence-encoder-large")
         else:
-            tfhub_url = "/home/cyh/ZLCODE/google/universal-sentence-encoder"
+            tfhub_url = LocalPathConfig.UNIVERSAL_SENTENCE_ENCODER
             print("/home/cyh/ZLCODE/google/universal-sentence-encoder")
 
         self._tfhub_url = tfhub_url
