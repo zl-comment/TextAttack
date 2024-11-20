@@ -5,7 +5,7 @@ universal sentence encoder class
 
 from textattack.constraints.semantics.sentence_encoders import SentenceEncoder
 from textattack.shared.utils import LazyLoader
-from textattack.localpathconfig import LocalPathConfig
+from textattack import LocalPathConfig
 hub = LazyLoader("tensorflow_hub", globals(), "tensorflow_hub")
 
 

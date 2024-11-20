@@ -15,5 +15,5 @@ from .genetic_algorithm import GeneticAlgorithm
 from .alzantot_genetic_algorithm import AlzantotGeneticAlgorithm
 from .improved_genetic_algorithm import ImprovedGeneticAlgorithm
 from .particle_swarm_optimization import ParticleSwarmOptimization
-from .greedy_word_swap_wir_zl  import GreedyWordSwapWIRZL
+from .my_custom_attack import MyCustomSearchMethod
 

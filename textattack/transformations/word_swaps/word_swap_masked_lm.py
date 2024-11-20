@@ -13,7 +13,7 @@ from textattack.shared import utils
 
 from .word_swap import WordSwap
 import os
-from textattack.localpathconfig import LocalPathConfig
+from textattack import LocalPathConfig
 
 class WordSwapMaskedLM(WordSwap):
     """Generate potential replacements for a word using a masked language
@@ -70,7 +70,7 @@ class WordSwapMaskedLM(WordSwap):
         self.batch_size = batch_size
         #加载预训练的模型的tokenizer和model
         if isinstance(masked_language_model, str):
-            masked_language_model_cache = localpathconfig.BERT_BASE_UNCASED
+            masked_language_model_cache = LocalPathConfig.BERT_BASE_UNCASED
             if os.path.exists(masked_language_model_cache):  # 如果是本地路径
                 print(f"Loading local model from {masked_language_model_cache}")
                 self._language_model = AutoModelForMaskedLM.from_pretrained(masked_language_model_cache)

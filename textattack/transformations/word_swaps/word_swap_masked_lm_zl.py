@@ -19,7 +19,7 @@ from collections import Counter
 import logging
 import spacy as spacy
 # 加载 spacy 的小型英语模型
-nlp = spacy.load('en_core_web_lg')
+nlp = spacy.load('en_core_web_sm')
 
 
 class WordSwapMaskedLM_zl(WordSwap):
