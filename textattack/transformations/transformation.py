@@ -13,6 +13,8 @@ class Transformation(ReprMixin, ABC):
     """An abstract class for transforming a sequence of text to produce a
     potential adversarial example."""
 
+   
+
     def __call__(
         self,
         current_text,
@@ -22,7 +24,6 @@ class Transformation(ReprMixin, ABC):
         return_indices=False,
         return_phrases_indices=False,    #是否返回短语索引
         phrases_indices_to_order=None,  #短语索引
-        self.nlp = spacy.load("en_core_web_sm")  # Load the spaCy model
     ):
         """Returns a list of all possible transformations for ``current_text``.
         Applies the ``pre_transformation_constraints`` then calls
@@ -39,6 +40,10 @@ class Transformation(ReprMixin, ABC):
             return_indices (bool): Whether the function returns indices_to_modify
                 instead of the transformed_texts.
         """
+    def __init__(self):
+        self.nlp = spacy.load("en_core_web_sm")  # Load the spaCy model
+    
+        
         if indices_to_modify is None:
             indices_to_modify = set(range(len(current_text.words)))
             # If we are modifying all indices, we don't care if some of the indices might have been shifted.
