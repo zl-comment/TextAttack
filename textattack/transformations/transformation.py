@@ -7,7 +7,7 @@ Transformation Abstract Class
 from abc import ABC, abstractmethod
 
 from textattack.shared.utils import ReprMixin
-
+import spacy
 
 class Transformation(ReprMixin, ABC):
     """An abstract class for transforming a sequence of text to produce a
@@ -20,6 +20,9 @@ class Transformation(ReprMixin, ABC):
         indices_to_modify=None,
         shifted_idxs=False,
         return_indices=False,
+        return_phrases_indices=False,    #是否返回短语索引
+        phrases_indices_to_order=None,  #短语索引
+        self.nlp = spacy.load("en_core_web_sm")  # Load the spaCy model
     ):
         """Returns a list of all possible transformations for ``current_text``.
         Applies the ``pre_transformation_constraints`` then calls
@@ -47,12 +50,28 @@ class Transformation(ReprMixin, ABC):
             indices_to_modify = set(
                 current_text.convert_from_original_idxs(indices_to_modify)
             )
+        #增加了返回短语
+        if phrases_indices_to_order is  None:
+            phrases_indices_to_order = set()
+            # 提取名词短语
+            for chunk in self.nlp(current_text.text).noun_chunks:
+                phrases_indices_to_order.add((chunk.start, chunk.end, "noun-phrase"))
+
+            # 提取动词短语和固定表达式
+            for token in self.nlp(current_text.text):
+                if token.pos_ == "VERB":
+                    phrases_indices_to_order.add((token.i, token.i + 1, "verb-phrase"))
+                elif token.dep_ == "fixed":
+                    phrases_indices_to_order.add((token.i, token.i + 1, "fixed-expression"))
 
         for constraint in pre_transformation_constraints:
             indices_to_modify = indices_to_modify & constraint(current_text, self)
 
         if return_indices:
             return indices_to_modify
+        #增加了返回短语的确定
+        if return_phrases_indices:
+            return phrases_indices_to_order
 
         transformed_texts = self._get_transformations(current_text, indices_to_modify)
         for text in transformed_texts:
