@@ -277,7 +277,7 @@ class Attack:
         )
 
         return transformed_texts
-
+    #关键函数
     def get_transformations(self, current_text, original_text=None, **kwargs):
         """Applies ``self.transformation`` to ``text``, then filters the list
         of possible transformations through the applicable constraints.
@@ -315,7 +315,7 @@ class Attack:
         return self.filter_transformations(
             transformed_texts, current_text, original_text
         )
-
+    #关键函数
     def _filter_transformations_uncached(
         self, transformed_texts, current_text, original_text=None
     ):

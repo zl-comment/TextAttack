@@ -114,7 +114,6 @@ class MyCustomSearchMethod(SearchMethod):
         #attacked_text是AttackedText类型
         attacked_text = initial_result.attacked_text
 
-
         index_order, search_over = self._get_index_order(attacked_text)
         # Example logic: simply return the initial text
         #输出重要性排序

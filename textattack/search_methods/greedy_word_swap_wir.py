@@ -130,22 +130,22 @@ class GreedyWordSwapWIR(SearchMethod):
         return index_order, search_over
 
     def perform_search(self, initial_result):
-        attacked_text = initial_result.attacked_text
+        attacked_text = initial_result.attacked_text #要攻击的文本
 
         # Sort words by order of importance
-        index_order, search_over = self._get_index_order(attacked_text)
+        index_order, search_over = self._get_index_order(attacked_text) #单词的重要性顺序和搜索结束标志
         i = 0
         cur_result = initial_result
         results = None
         #indices_to_modify的入参在这里
-        while i < len(index_order) and not search_over:
+        while i < len(index_order) and not search_over:#按照index_order的顺序进行替换
             transformed_text_candidates = self.get_transformations(
                 cur_result.attacked_text,
                 original_text=initial_result.attacked_text,
                 indices_to_modify=[index_order[i]],
             )
             i += 1
-            if len(transformed_text_candidates) == 0:
+            if len(transformed_text_candidates) == 0:#如果没有生成任何变体，继续下一个索引。
                 continue
             results, search_over = self.get_goal_results(transformed_text_candidates)
             results = sorted(results, key=lambda x: -x.score)
