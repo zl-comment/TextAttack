@@ -30,12 +30,12 @@ class MyCustomSearchMethod(SearchMethod):
                 phrases.append((token.i, token.i + 1, "fixed-expression"))
 
         if self.wir_method == "unk":
-            leave_one_texts = [initial_text.replace_words_at_indices(range(start, end), [self.unk_token] * (end - start)) for start, end, _ in phrases]
+            leave_one_texts = [initial_text.replace_phrase_at_index(range(start, end), [self.unk_token] * (end - start)) for start, end, _ in phrases]
             leave_one_results, search_over = self.get_goal_results(leave_one_texts)
             index_scores = np.array([result.score for result in leave_one_results])
 
         elif self.wir_method == "weighted-saliency":
-            leave_one_texts = [initial_text.replace_words_at_indices(range(start, end), [self.unk_token] * (end - start)) for start, end, _ in phrases]
+            leave_one_texts = [initial_text.replace_phrase_at_index(range(start, end), [self.unk_token] * (end - start)) for start, end, _ in phrases]
             leave_one_results, search_over = self.get_goal_results(leave_one_texts)
             saliency_scores = np.array([result.score for result in leave_one_results])
             softmax_saliency_scores = softmax(torch.Tensor(saliency_scores), dim=0).numpy()

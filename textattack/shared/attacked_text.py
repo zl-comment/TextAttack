@@ -356,32 +356,32 @@ class AttackedText:
             words[i] = new_word
         return self.generate_new_attacked_text(words)
 
-    def replace_phrases_at_indices(
-        self, indices: Iterable[int], new_phrases: Iterable[str]
-    ) -> AttackedText:
-        """Returns a new AttackedText object where phrases at specified `indices` are replaced with `new_phrases`.
+    # def replace_phrases_at_indices(
+    #     self, indices: Iterable[int], new_phrases: Iterable[str]
+    # ) -> AttackedText:
+    #     """Returns a new AttackedText object where phrases at specified `indices` are replaced with `new_phrases`.
 
-        Args:
-            indices: An iterable of indices where phrases should be replaced.
-            new_phrases: An iterable of new phrases to insert at the specified indices.
+    #     Args:
+    #         indices: An iterable of indices where phrases should be replaced.
+    #         new_phrases: An iterable of new phrases to insert at the specified indices.
 
-        Returns:
-            A new AttackedText object with the specified phrases replaced.
-        """
-        if len(indices) != len(new_phrases):
-            raise ValueError(
-                f"Cannot replace {len(new_phrases)} phrases at {len(indices)} indices."
-            )
-        words = self.words[:]
-        for i, new_phrase in zip(indices, new_phrases):
-            if not isinstance(new_phrase, str):
-                raise TypeError(
-                    f"replace_phrases_at_indices requires `str` phrases, got {type(new_phrase)}"
-                )
-            if (i < 0) or (i >= len(words)):
-                raise ValueError(f"Cannot assign phrase at index {i}")
-            words[i] = new_phrase
-        return self.generate_new_attacked_text(words)
+    #     Returns:
+    #         A new AttackedText object with the specified phrases replaced.
+    #     """
+    #     if len(indices) != len(new_phrases):
+    #         raise ValueError(
+    #             f"Cannot replace {len(new_phrases)} phrases at {len(indices)} indices."
+    #         )
+    #     words = self.words[:]
+    #     for i, new_phrase in zip(indices, new_phrases):
+    #         if not isinstance(new_phrase, str):
+    #             raise TypeError(
+    #                 f"replace_phrases_at_indices requires `str` phrases, got {type(new_phrase)}"
+    #             )
+    #         if (i < 0) or (i >= len(words)):
+    #             raise ValueError(f"Cannot assign phrase at index {i}")
+    #         words[i] = new_phrase
+    #     return self.generate_new_attacked_text(words)
 
     def replace_word_at_index(self, index: int, new_word: str) -> AttackedText:
         """Returns a new AttackedText object where the word at ``index`` is
@@ -556,6 +556,26 @@ class AttackedText:
                 word2token_mapping[i] = matched_tokens
 
         return word2token_mapping
+
+    def replace_phrase_at_index(
+        self, indices: Iterable[int], new_phrases: Iterable[str]
+    ) -> AttackedText:
+        """Returns a new AttackedText object where phrases at specified ``indices`` are
+        replaced with ``new_phrases``."""
+        if len(indices) != len(new_phrases):
+            raise ValueError(
+                f"Cannot replace {len(new_phrases)} phrases at {len(indices)} indices."
+            )
+        words = self.words[:]
+        for i, new_phrase in zip(indices, new_phrases):
+            if not isinstance(new_phrase, str):
+                raise TypeError(
+                    f"replace_phrase_at_index requires ``str`` phrases, got {type(new_phrase)}"
+                )
+            if (i < 0) or (i >= len(words)):
+                raise ValueError(f"Cannot assign phrase at index {i}")
+            words[i] = new_phrase
+        return self.generate_new_attacked_text(words)
 
     @property
     def tokenizer_input(self) -> Tuple[str]:
