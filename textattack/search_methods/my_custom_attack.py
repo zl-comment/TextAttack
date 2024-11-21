@@ -104,14 +104,15 @@ class MyCustomSearchMethod(SearchMethod):
 
         return index_order, search_over
 
-    def perform_search(self, initial_text):
+    def perform_search(self, initial_result):
         """Perform the search using the custom method."""
         # Implement your custom search logic here
-
+        #initial_result是GoalFunctionResult类型
+        #attacked_text是AttackedText类型
         attacked_text = initial_result.attacked_text
 
 
-        index_order, search_over = self._get_index_order(initial_text)
+        index_order, search_over = self._get_index_order(attacked_text)
         # Example logic: simply return the initial text
         #输出重要性排序
         print(f"Index Order: {index_order}")
