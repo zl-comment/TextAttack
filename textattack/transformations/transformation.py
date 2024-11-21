@@ -69,10 +69,13 @@ class Transformation(ReprMixin, ABC):
                 elif token.dep_ == "fixed":
                     phrases_indices_to_order.add((token.i, token.i + 1, "fixed-expression"))
         else:
-            phrases_indices_to_order = "测试"
+            phrases_indices_to_order = set(phrases_indices_to_order)
 
         for constraint in pre_transformation_constraints:
             indices_to_modify = indices_to_modify & constraint(current_text, self)
+            phrases_indices_to_order = phrases_indices_to_order & constraint(current_text, self)
+
+        
 
         if return_indices:
             return indices_to_modify
