@@ -26,9 +26,9 @@ class MyCustomSearchMethod(SearchMethod):
 
         # Identify phrases to replace
         phrases = []
-        for chunk in self.nlp(initial_text.text).noun_chunks:
+        for chunk in self.nlp(initial_text).noun_chunks:
             phrases.append((chunk.start, chunk.end, "noun-phrase"))
-        for token in self.nlp(initial_text.text):
+        for token in self.nlp(initial_text):
             if token.pos_ == "VERB":
                 phrases.append((token.i, token.i + 1, "verb-phrase"))
             elif token.dep_ == "fixed":
@@ -107,6 +107,10 @@ class MyCustomSearchMethod(SearchMethod):
     def perform_search(self, initial_text):
         """Perform the search using the custom method."""
         # Implement your custom search logic here
+
+        attacked_text = initial_result.attacked_text
+
+
         index_order, search_over = self._get_index_order(initial_text)
         # Example logic: simply return the initial text
         #输出重要性排序
@@ -128,6 +132,8 @@ class MyCustomSearchMethod(SearchMethod):
 
     def extra_repr_keys(self):
         return ["wir_method"]
+
+
 # Example usage
 if __name__ == "__main__":
     search_method = MyCustomSearchMethod()
