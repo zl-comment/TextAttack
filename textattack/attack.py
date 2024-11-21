@@ -262,7 +262,7 @@ class Attack:
         # Convert indices_to_order to list for easier shuffling later
         return len_text, list(indices_to_order)
 
-    def get_phrase_indices(self, current_text):
+    def get_phrase_indices(self, current_text, **kwargs):
         """Applies ``pre_transformation_constraints`` to ``text`` to get all
         the indices that can be used to search and order.
 
