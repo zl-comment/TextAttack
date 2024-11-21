@@ -260,6 +260,29 @@ class Attack:
         # Convert indices_to_order to list for easier shuffling later
         return len_text, list(indices_to_order)
 
+    def get_phrase_indices(self, current_text):
+    """Applies ``pre_transformation_constraints`` to ``text`` to get all
+        the indices that can be used to search and order.
+
+        Args:
+            current_text: The current ``AttackedText`` for which we need to find indices are eligible to be ordered.
+        Returns:
+            The length and the filtered list of indices which search methods can use to search/order.
+        """
+    phrases_indices_to_order = self.transformation(
+            current_text, #要攻击的文本
+            pre_transformation_constraints=self.pre_transformation_constraints, #攻击限制
+            return_phrases_indices=True,
+            **kwargs,
+        )
+
+        len_phrases = len(phrases_indices_to_order)
+
+        # Convert indices_to_order to list for easier shuffling later
+        return len_phrases, list(phrases_indices_to_order)
+
+
+
     def _get_transformations_uncached(self, current_text, original_text=None, **kwargs):
         """Applies ``self.transformation`` to ``text``, then filters the list
         of possible transformations through the applicable constraints.
