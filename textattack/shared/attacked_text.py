@@ -567,13 +567,14 @@ class AttackedText:
                 f"Cannot replace {len(new_phrases)} phrases at {len(indices)} indices."
             )
         words = self.words[:]
+        print(words)
         for i, new_phrase in zip(indices, new_phrases):
             if not isinstance(new_phrase, str):
                 raise TypeError(
                     f"replace_phrase_at_index requires ``str`` phrases, got {type(new_phrase)}"
                 )
-            # if (i < 0) or (i >= len(words)):
-            #     raise ValueError(f"Cannot assign phrase at index {i}")
+            if (i < 0) or (i >= len(words)):
+                raise ValueError(f"Cannot assign phrase at index {i}")
             words[i] = new_phrase
         return self.generate_new_attacked_text(words)
 
