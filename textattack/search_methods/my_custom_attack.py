@@ -109,6 +109,20 @@ class MyCustomSearchMethod(SearchMethod):
         
         return initial_text
 
+    def check_transformation_compatibility(self, transformation):
+        """Since it ranks words by their importance, GreedyWordSwapWIR is
+        limited to word swap and deletion transformations."""
+        return transformation_consists_of_word_swaps_and_deletions(transformation)
+
+    @property
+    def is_black_box(self):
+        if self.wir_method == "gradient":
+            return False
+        else:
+            return True
+
+    def extra_repr_keys(self):
+        return ["wir_method"]
 # Example usage
 if __name__ == "__main__":
     search_method = MyCustomSearchMethod()
