@@ -159,6 +159,8 @@ class Attack:
 
         # Give search method access to get indices which need to be ordered / searched
         self.search_method.get_indices_to_order = self.get_indices_to_order
+        # Give search method access to get indices which need to be ordered / searched
+        self.search_method.get_phrase_indices = self.get_phrase_indices
 
         self.search_method.filter_transformations = self.filter_transformations
 
