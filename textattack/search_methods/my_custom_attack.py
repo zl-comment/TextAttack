@@ -18,7 +18,7 @@ class MyCustomSearchMethod(SearchMethod):
         self.nlp = spacy.load("en_core_web_sm")  # Load the spaCy model
 
 
-
+    #initial_text是AttackedText类型在utils中的attacked_text.py
     def _get_index_order(self, initial_text, max_len=-1):
         """Custom logic to return word indices of `initial_text` in descending order of importance."""
 
@@ -26,9 +26,9 @@ class MyCustomSearchMethod(SearchMethod):
 
         # Identify phrases to replace
         phrases = []
-        for chunk in self.nlp(initial_text).noun_chunks:
+        for chunk in self.nlp(initial_text.text).noun_chunks:
             phrases.append((chunk.start, chunk.end, "noun-phrase"))
-        for token in self.nlp(initial_text):
+        for token in self.nlp(initial_text.text):
             if token.pos_ == "VERB":
                 phrases.append((token.i, token.i + 1, "verb-phrase"))
             elif token.dep_ == "fixed":
