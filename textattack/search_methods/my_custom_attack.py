@@ -119,7 +119,7 @@ class MyCustomSearchMethod(SearchMethod):
         #输出重要性排序
         print(f"Index Order: {index_order}")
         
-        return initial_text
+        return initial_result
 
     def check_transformation_compatibility(self, transformation):
         """Since it ranks words by their importance, GreedyWordSwapWIR is
