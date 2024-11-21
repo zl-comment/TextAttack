@@ -28,7 +28,7 @@ class MyCustomSearchMethod(SearchMethod):
         # Identify phrases to replace
         phrases = []
         # Use indices_to_order to extract the relevant text
-        relevant_text = " ".join(initial_text[i] for i in indices_to_order)
+        relevant_text = " ".join(initial_text.text[i] for i in indices_to_order)
         for chunk in self.nlp(relevant_text).noun_chunks:
             phrases.append((chunk.start, chunk.end, "noun-phrase"))
         for token in self.nlp(relevant_text):
