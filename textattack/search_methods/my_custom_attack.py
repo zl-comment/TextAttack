@@ -1,4 +1,4 @@
-import spacy
+
 import numpy as np
 import torch
 from torch.nn.functional import softmax
@@ -14,42 +14,42 @@ class MyCustomSearchMethod(SearchMethod):
     def __init__(self, wir_method="unk", unk_token="[UNK]"):
         self.wir_method = wir_method
         self.unk_token = unk_token
-        self.nlp = spacy.load("en_core_web_sm")  # Load the spaCy model
+        
 
 
     #initial_text是AttackedText类型在utils中的attacked_text.py
     def _get_index_order(self, initial_text, max_len=-1):
         """Custom logic to return word indices of `initial_text` in descending order of importance."""
 
-        len_text, indices_to_order = self.get_indices_to_order(initial_text)
-        print("len_text:",len_text)   #可修改的总个数
-        print("indices_to_order:",indices_to_order) #可修改的单词索引
+        len_phrases, phrases_indices_to_order = self.get_phrase_indices(initial_text)
+        print("len_phrases:",len_phrases)   #可修改的短语总个数
+        print("phrases_indices_to_order:",phrases_indices_to_order) #可修改的短语索引
         #ndices_to_order 是一个关键的中间结果，它帮助确定攻击过程中哪些文本部分是可变的，并在后续步骤中对这些部分进行处理。
         # Identify phrases to replace
-        phrases = []
-        # Use indices_to_order to extract the relevant text
-        relevant_text = " ".join(initial_text.text[i] for i in indices_to_order)
-        for chunk in self.nlp(relevant_text).noun_chunks:
-            phrases.append((chunk.start, chunk.end, "noun-phrase"))
-        for token in self.nlp(relevant_text):
-            if token.pos_ == "VERB":
-                phrases.append((token.i, token.i + 1, "verb-phrase"))
-            elif token.dep_ == "fixed":
-                phrases.append((token.i, token.i + 1, "fixed-expression"))
-        print(phrases)
+        # phrases = []
+        # # Use indices_to_order to extract the relevant text
+        # relevant_text = " ".join(initial_text.text[i] for i in indices_to_order)
+        # for chunk in self.nlp(relevant_text).noun_chunks:
+        #     phrases.append((chunk.start, chunk.end, "noun-phrase"))
+        # for token in self.nlp(relevant_text):
+        #     if token.pos_ == "VERB":
+        #         phrases.append((token.i, token.i + 1, "verb-phrase"))
+        #     elif token.dep_ == "fixed":
+        #         phrases.append((token.i, token.i + 1, "fixed-expression"))
+        # print(phrases)
         if self.wir_method == "unk":
-            leave_one_texts = [initial_text.replace_phrase_at_index(range(start, end), [self.unk_token] * (end - start)) for start, end, _ in phrases]
+            leave_one_texts = [initial_text.replace_phrase_at_index(range(start, end), [self.unk_token] * (end - start)) for start, end, _ in phrases_indices_to_order]
             leave_one_results, search_over = self.get_goal_results(leave_one_texts)
             index_scores = np.array([result.score for result in leave_one_results])
 
         elif self.wir_method == "weighted-saliency":
-            leave_one_texts = [initial_text.replace_phrase_at_index(range(start, end), [self.unk_token] * (end - start)) for start, end, _ in phrases]
+            leave_one_texts = [initial_text.replace_phrase_at_index(range(start, end), [self.unk_token] * (end - start)) for start, end, _ in phrases_indices_to_order]
             leave_one_results, search_over = self.get_goal_results(leave_one_texts)
             saliency_scores = np.array([result.score for result in leave_one_results])
             softmax_saliency_scores = softmax(torch.Tensor(saliency_scores), dim=0).numpy()
 
             delta_ps = []
-            for idx, (start, end, _) in enumerate(phrases):
+            for idx, (start, end, _) in enumerate(phrases_indices_to_order):
                 if search_over:
                     delta_ps = delta_ps + [0.0] * (len(softmax_saliency_scores) - len(delta_ps))
                     break
@@ -73,17 +73,17 @@ class MyCustomSearchMethod(SearchMethod):
             index_scores = softmax_saliency_scores * np.array(delta_ps)
 
         elif self.wir_method == "delete":
-            leave_one_texts = [initial_text.delete_word_at_index(i) for i, _, _ in phrases]
+            leave_one_texts = [initial_text.delete_word_at_index(i) for i, _, _ in phrases_indices_to_order]
             leave_one_results, search_over = self.get_goal_results(leave_one_texts)
             index_scores = np.array([result.score for result in leave_one_results])
 
         elif self.wir_method == "gradient":
             victim_model = self.get_victim_model()
-            index_scores = np.zeros(len_text)
+            index_scores = np.zeros(len_phrases)
             grad_output = victim_model.get_grad(initial_text.tokenizer_input)
             gradient = grad_output["gradient"]
             word2token_mapping = initial_text.align_with_model_tokens(victim_model)
-            for i, (start, end, _) in enumerate(phrases):
+            for i, (start, end, _) in enumerate(phrases_indices_to_order):
                 matched_tokens = [word2token_mapping[idx] for idx in range(start, end)]
                 matched_tokens = [token for sublist in matched_tokens for token in sublist]
                 if not matched_tokens:
@@ -95,17 +95,17 @@ class MyCustomSearchMethod(SearchMethod):
             search_over = False
 
         elif self.wir_method == "random":
-            index_order = indices_to_order
+            index_order = list(range(len_phrases))
             np.random.shuffle(index_order)
             search_over = False
         else:
             raise ValueError(f"Unsupported WIR method {self.wir_method}")
 
         if self.wir_method != "random":
-            index_order = np.array(indices_to_order)[(-index_scores).argsort()]
+            index_order = np.array(range(len_phrases))[(-index_scores).argsort()]
             search_over = False
 
-        return index_order, search_over
+        return phrases_indices_to_order, search_over
 
     def perform_search(self, initial_result):
         """Perform the search using the custom method."""
@@ -114,10 +114,10 @@ class MyCustomSearchMethod(SearchMethod):
         #attacked_text是AttackedText类型
         attacked_text = initial_result.attacked_text
 
-        index_order, search_over = self._get_index_order(attacked_text)
+        phrases_indices_to_order, search_over = self._get_index_order(attacked_text)
         # Example logic: simply return the initial text
         #输出重要性排序
-        print(f"Index Order: {index_order}")
+        print(f"Index Order: {phrases_indices_to_order}")
         
         return initial_result
 
