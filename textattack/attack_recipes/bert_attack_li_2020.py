@@ -43,7 +43,7 @@ class BERTAttackLi2020(AttackRecipe):
         transformation = WordSwapMaskedLM(method="bert-attack", max_candidates=48)
         #
         # Don't modify the same word twice or stopwords.
-        #
+        #重要的停用词修改！！！！
         constraints = [RepeatModification(), StopwordModification()]
 
         # "We only take ε percent of the most important words since we tend to keep

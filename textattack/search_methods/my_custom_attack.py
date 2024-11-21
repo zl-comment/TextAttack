@@ -23,7 +23,9 @@ class MyCustomSearchMethod(SearchMethod):
         """Custom logic to return word indices of `initial_text` in descending order of importance."""
 
         len_text, indices_to_order = self.get_indices_to_order(initial_text)
-
+        print("len_text:",len_text)   #可修改的总个数
+        print("indices_to_order:",indices_to_order) #可修改的单词索引
+        #ndices_to_order 是一个关键的中间结果，它帮助确定攻击过程中哪些文本部分是可变的，并在后续步骤中对这些部分进行处理。
         # Identify phrases to replace
         phrases = []
         for chunk in self.nlp(initial_text.text).noun_chunks:
