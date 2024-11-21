@@ -13,7 +13,9 @@ class Transformation(ReprMixin, ABC):
     """An abstract class for transforming a sequence of text to produce a
     potential adversarial example."""
 
-   
+    def __init__(self):
+        self.nlp = spacy.load("en_core_web_sm")  # Load the spaCy model
+    
 
     def __call__(
         self,
@@ -40,8 +42,6 @@ class Transformation(ReprMixin, ABC):
             return_indices (bool): Whether the function returns indices_to_modify
                 instead of the transformed_texts.
         """
-    def __init__(self):
-        self.nlp = spacy.load("en_core_web_sm")  # Load the spaCy model
     
         
         if indices_to_modify is None:
