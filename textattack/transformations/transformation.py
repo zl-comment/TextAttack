@@ -55,7 +55,7 @@ class Transformation(ReprMixin, ABC):
             )
         #增加了返回短语
         if phrases_indices_to_order is  None:
-             self.nlp = spacy.load("en_core_web_sm")  # Load the spaCy model
+            self.nlp = spacy.load("en_core_web_sm")  # Load the spaCy model
             phrases_indices_to_order = set()
             # 提取名词短语
             for chunk in self.nlp(current_text.text).noun_chunks:
