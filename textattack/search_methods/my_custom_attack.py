@@ -1,4 +1,3 @@
-
 import spacy
 import numpy as np
 import torch
@@ -28,9 +27,11 @@ class MyCustomSearchMethod(SearchMethod):
         #ndices_to_order 是一个关键的中间结果，它帮助确定攻击过程中哪些文本部分是可变的，并在后续步骤中对这些部分进行处理。
         # Identify phrases to replace
         phrases = []
-        for chunk in self.nlp(initial_text.text).noun_chunks:
+        # Use indices_to_order to extract the relevant text
+        relevant_text = " ".join(initial_text[i] for i in indices_to_order)
+        for chunk in self.nlp(relevant_text).noun_chunks:
             phrases.append((chunk.start, chunk.end, "noun-phrase"))
-        for token in self.nlp(initial_text.text):
+        for token in self.nlp(relevant_text):
             if token.pos_ == "VERB":
                 phrases.append((token.i, token.i + 1, "verb-phrase"))
             elif token.dep_ == "fixed":
