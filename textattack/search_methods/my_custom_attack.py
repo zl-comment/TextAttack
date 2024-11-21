@@ -35,7 +35,7 @@ class MyCustomSearchMethod(SearchMethod):
                 phrases.append((token.i, token.i + 1, "verb-phrase"))
             elif token.dep_ == "fixed":
                 phrases.append((token.i, token.i + 1, "fixed-expression"))
-
+        print(phrases)
         if self.wir_method == "unk":
             leave_one_texts = [initial_text.replace_phrase_at_index(range(start, end), [self.unk_token] * (end - start)) for start, end, _ in phrases]
             leave_one_results, search_over = self.get_goal_results(leave_one_texts)
