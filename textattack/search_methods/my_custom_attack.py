@@ -1,8 +1,13 @@
-from textattack.search_methods import SearchMethod
+
 import spacy
 import numpy as np
 import torch
 from torch.nn.functional import softmax
+from textattack.goal_function_results import GoalFunctionResultStatus
+from textattack.search_methods import SearchMethod
+from textattack.shared.validators import (
+    transformation_consists_of_word_swaps_and_deletions,
+)
 
 class MyCustomSearchMethod(SearchMethod):
     """A custom search method for attacking text models."""
