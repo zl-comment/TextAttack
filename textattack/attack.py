@@ -261,7 +261,7 @@ class Attack:
         return len_text, list(indices_to_order)
 
     def get_phrase_indices(self, current_text):
-    """Applies ``pre_transformation_constraints`` to ``text`` to get all
+        """Applies ``pre_transformation_constraints`` to ``text`` to get all
         the indices that can be used to search and order.
 
         Args:
