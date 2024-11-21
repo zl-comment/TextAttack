@@ -573,6 +573,7 @@ class AttackedText:
                 raise TypeError(
                     f"replace_phrase_at_index requires ``str`` phrases, got {type(new_phrase)}"
                 )
+            print("i", i, "len(words)", len(words))
             if (i < 0) or (i >= len(words)):
                 raise ValueError(f"Cannot assign phrase at index {i}")
             words[i] = new_phrase
