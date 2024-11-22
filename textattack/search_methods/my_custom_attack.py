@@ -109,7 +109,7 @@ class MyCustomSearchMethod(SearchMethod):
         # 按照 phrases_indices_to_order 的顺序进行替换
         while i < len(phrases_indices_to_order) and not search_over:
             # 获取在当前索引位置的转换候选项
-            print(self.get_transformations)
+            
             transformed_text_candidates = self.get_transformations(
                 cur_result.attacked_text,
                 original_text=initial_result.attacked_text,
