@@ -23,6 +23,7 @@ class Transformation(ReprMixin, ABC):
         return_indices=False,
         return_phrases_indices=False,    #是否返回短语索引
         phrases_indices=None,  #短语索引
+        phrase=None, #确认是否启用短语特征
     ):
         """Returns a list of all possible transformations for ``current_text``.
         Applies the ``pre_transformation_constraints`` then calls
@@ -96,13 +97,13 @@ class Transformation(ReprMixin, ABC):
         if return_phrases_indices:
             return phrases_indices
 
-        if indices_to_modify is not None:
+        if phrase is not None:
             transformed_texts = self._get_transformations(current_text, indices_to_modify)
             for text in transformed_texts:
                 text.attack_attrs["last_transformation"] = self
         return transformed_texts
 
-        if phrases_indices is not None:
+        elif :
             transformed_texts_phrases = self._get_transformations_phrases(current_text, phrases_indices)
             for text in transformed_texts_phrases:
                 text.attack_attrs["last_transformation"] = self
