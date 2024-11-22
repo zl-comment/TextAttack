@@ -542,7 +542,7 @@ class WordSwapMaskedLM_zl(WordSwap):
 
                 # 9. 从masked_lm_logits中选择与目标标记位置对应的logits。
                 logits = torch.index_select(masked_lm_logits, 0, target_ids_pos_tensor)
-                loss = cross_entropy_loss(logits, phrase_tensor)  # 计算损失
+                loss = cross_entropy_loss(logits.float(), phrase_tensor)  # Convert to FP32
                 perplexity = torch.exp(torch.mean(loss, dim=0)).item()  # 计算困惑度
                 phrase = "".join(
                     self._lm_tokenizer.convert_ids_to_tokens(phrase_tensor)
