@@ -599,7 +599,8 @@ class WordSwapMaskedLM_zl(WordSwap):
 
             else:
                 # 处理短语
-                phrase = current_text.words[start_idx:end_idx]
+                for i in range(start_idx, end_idx):
+                    phrase.append(current_text.words[i])
                 current_inputs = self._encode_text(" ".join(phrase))
                 with torch.no_grad():
                     pred_probs = self._language_model(**current_inputs)[0][0]
