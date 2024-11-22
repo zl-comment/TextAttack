@@ -13,7 +13,6 @@ class Transformation(ReprMixin, ABC):
     """An abstract class for transforming a sequence of text to produce a
     potential adversarial example."""
 
-    
 
     def __call__(
         self,
@@ -78,6 +77,9 @@ class Transformation(ReprMixin, ABC):
             for token in doc:
                 if token.i not in covered_indices:
                     phrases_indices_to_order.add((token.i, token.i + 1, "single-word"))
+
+            # 按 token 序号排序
+            phrases_indices_to_order = sorted(phrases_indices_to_order, key=lambda x: x[0])
         else:
             phrases_indices_to_order = set(phrases_indices_to_order)
 
