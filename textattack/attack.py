@@ -353,7 +353,7 @@ class Attack:
         Returns:
             A filtered list of transformations where each transformation matches the constraints
         """
-        transformed_texts_phrases = self.get_transformations_phrases(
+        transformed_texts_phrases = self.transformation(
             current_text,   #要攻击的文本
             pre_transformation_constraints=self.pre_transformation_constraints,  #攻击限制
             **kwargs,
