@@ -113,7 +113,7 @@ class MyCustomSearchMethod(SearchMethod):
             transformed_text_candidates = self.get_transformations(
                 cur_result.attacked_text,
                 original_text=initial_result.attacked_text,
-                phrases_indices=phrases_indices_to_order[i],
+                indices_to_modify=phrases_indices_to_order[i],   #修改的是短语或单词
             )
             i += 1
             if len(transformed_text_candidates) == 0:
