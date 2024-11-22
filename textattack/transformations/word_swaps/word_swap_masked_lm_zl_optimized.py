@@ -159,7 +159,7 @@ class WordSwapMaskedLM_zl(WordSwap):
                 mask_token_logits = preds[j, masked_index]
                 mask_token_probs = torch.softmax(mask_token_logits, dim=0)
                 ranked_indices = torch.argsort(mask_token_probs, descending=True)
-            ranked_indices = ranked_indices[:20]  # Limit top candidates
+                ranked_indices = ranked_indices[:20]  # Limit top candidates
                 top_words = []
                 for _id in ranked_indices:
                     _id = _id.item()
@@ -274,11 +274,11 @@ class WordSwapMaskedLM_zl(WordSwap):
     #         ]
     #         return top_replacements
     def _bert_attack_replacement_words(
-            self,
-            current_text,
-            index,
-            id_preds,
-            masked_lm_logits,
+        self,
+        current_text,
+        index,
+        id_preds,
+        masked_lm_logits,
     ):
         """使用BERT-Attack方法获取要替换的单词的替换词。
         
