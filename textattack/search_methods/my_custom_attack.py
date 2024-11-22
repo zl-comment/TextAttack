@@ -110,7 +110,7 @@ class MyCustomSearchMethod(SearchMethod):
         while i < len(phrases_indices_to_order) and not search_over:
             # 获取在当前索引位置的转换候选项
             
-            transformed_text_candidates = self.get_transformations(
+            transformed_text_candidates = self.get_transformations_phrases(
                 cur_result.attacked_text,
                 original_text=initial_result.attacked_text,
                 phrases_indices=phrases_indices_to_order[i],   #修改的是短语或单词
