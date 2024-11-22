@@ -21,8 +21,8 @@ class MyCustomSearchMethod(SearchMethod):
         """Custom logic to return word indices of `initial_text` in descending order of importance."""
 
         len_phrases, phrases_indices = self.get_phrase_indices(initial_text)
-        print("len_phrases:",len_phrases)   #可修改的短语总个数
-        print("phrases_indices:",phrases_indices) #可修改的短语索引
+        # print("len_phrases:",len_phrases)   #可修改的短语总个数
+        # print("phrases_indices:",phrases_indices) #可修改的短语索引
         
         if self.wir_method == "unk":
             leave_one_texts = [initial_text.replace_phrase_at_index(range(start, end), [self.unk_token] * (end - start)) for start, end, _ in phrases_indices]
@@ -93,7 +93,7 @@ class MyCustomSearchMethod(SearchMethod):
             phrases_indices_to_order = [phrases_indices[i] for i in index_order]
             search_over = False
         #添加了返回重要性排名
-        print("index_order:",index_order)
+       
         return phrases_indices_to_order, search_over
 
     def perform_search(self, initial_result):
