@@ -363,7 +363,18 @@ class WordSwapMaskedLM_zl(WordSwap):
         """
         masked_texts = []
         # 为每个要修改的索引创建掩码版本的文本
-        masked_text = current_text.replace_words_at_indices(start_idx, end_idx, [self._lm_tokenizer.mask_token] * (end_idx - start_idx))
+        try:
+            masked_text = current_text.replace_words_at_indices(
+                start_idx, end_idx, [self._lm_tokenizer.mask_token] * (end_idx - start_idx)
+            )
+        except TypeError as e:
+            print(f"Error: {e}")
+            print(f"start_idx: {start_idx}")
+            print(f"end_idx: {end_idx}")
+            print(f"mask_token: {self._lm_tokenizer.mask_token}")
+            print(f"mask_token_list: {[self._lm_tokenizer.mask_token] * (end_idx - start_idx)}")
+            print(f"current_text: {current_text}")
+            raise  # 重新抛出异常以便进一步处理或调试
         masked_texts.append(masked_text.text)
 
         i = 0
@@ -445,7 +456,18 @@ class WordSwapMaskedLM_zl(WordSwap):
         """
         # 1. 找到需要替换的短语在当前文本中的BPE标记。
         # 将要替换的短语替换为掩蔽标记（mask token）。
-        masked_text = current_text.replace_words_at_indices(start_idx, end_idx, [self._lm_tokenizer.mask_token] * (end_idx - start_idx))
+        try:
+            masked_text = current_text.replace_words_at_indices(
+                start_idx, end_idx, [self._lm_tokenizer.mask_token] * (end_idx - start_idx)
+            )
+        except TypeError as e:
+            print(f"Error: {e}")
+            print(f"start_idx: {start_idx}")
+            print(f"end_idx: {end_idx}")
+            print(f"mask_token: {self._lm_tokenizer.mask_token}")
+            print(f"mask_token_list: {[self._lm_tokenizer.mask_token] * (end_idx - start_idx)}")
+            print(f"current_text: {current_text}")
+            raise  # 重新抛出异常以便进一步处理或调试
 
         # 2. 编码掩蔽后的文本以获取输入ID。
         current_inputs = self._encode_text(masked_text.text)
