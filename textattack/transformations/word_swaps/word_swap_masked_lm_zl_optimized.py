@@ -625,7 +625,7 @@ class WordSwapMaskedLM_zl(WordSwap):
                     original_phrase = " ".join(current_text.words[start_idx:end_idx])
                     if replacement_phrase != original_phrase:
                         transformed_texts.append(
-                            current_text.replace_phrase_at_indices(start_idx, end_idx, replacement_phrase)
+                            current_text.replace_phrase_at_index(range(start_idx, end_idx), replacement_phrase)
                         )
 
         return transformed_texts
