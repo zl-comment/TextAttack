@@ -525,7 +525,7 @@ class WordSwapMaskedLM_zl(WordSwap):
         """
         print("phrases_indices:", phrases_indices)
         transformed_texts = []
-        for start_idx, end_idx, idx_type in phrases_indices:
+        for start_idx,  idx_type,end_idx in phrases_indices:
             if idx_type == 'single-word':
                 # 处理单词
                 word_at_index = current_text.words[start_idx]
