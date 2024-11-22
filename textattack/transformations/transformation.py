@@ -53,16 +53,17 @@ class Transformation(ReprMixin, ABC):
             indices_to_modify = set(
                 current_text.convert_from_original_idxs(indices_to_modify)
             )
-        #增加了返回短语
+        #增加了返回短语 已经是经过筛选的
         if phrases_indices_to_order is  None:
             self.nlp = spacy.load("en_core_web_sm")  # Load the spaCy model
             phrases_indices_to_order = set()
             # 提取名词短语
-            for chunk in self.nlp(current_text.text).noun_chunks:
+            relevant_text = " ".join(current_text.text[i] for i in indices_to_order)
+            for chunk in self.nlp(relevant_text).noun_chunks:
                 phrases_indices_to_order.add((chunk.start, chunk.end, "noun-phrase"))
 
             # 提取动词短语和固定表达式
-            for token in self.nlp(current_text.text):
+            for token in self.nlp(relevant_text):
                 if token.pos_ == "VERB":
                     phrases_indices_to_order.add((token.i, token.i + 1, "verb-phrase"))
                 elif token.dep_ == "fixed":
@@ -72,7 +73,7 @@ class Transformation(ReprMixin, ABC):
 
         for constraint in pre_transformation_constraints:
             indices_to_modify = indices_to_modify & constraint(current_text, self)
-            phrases_indices_to_order = phrases_indices_to_order & constraint(current_text, self)
+            # phrases_indices_to_order = phrases_indices_to_order & constraint(current_text, self)
 
         
 
