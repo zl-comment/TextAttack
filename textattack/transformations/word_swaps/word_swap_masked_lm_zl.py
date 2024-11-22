@@ -523,6 +523,7 @@ class WordSwapMaskedLM_zl(WordSwap):
         """
         解析 indices_to_modify
         """
+        print("indices_to_modify:", indices_to_modify)
         transformed_texts = []
         for start_idx, end_idx, idx_type in indices_to_modify:
             if idx_type == 'single-word':
