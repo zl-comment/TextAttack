@@ -271,17 +271,17 @@ class Attack:
         Returns:
             The length and the filtered list of indices which search methods can use to search/order.
         """
-        phrases_indices_to_order = self.transformation(
+        phrases_indices = self.transformation(
             current_text, #要攻击的文本
             pre_transformation_constraints=self.pre_transformation_constraints, #攻击限制
             return_phrases_indices=True,
             **kwargs,
         )
 
-        len_phrases = len(phrases_indices_to_order)
+        len_phrases = len(phrases_indices)
 
         # Convert indices_to_order to list for easier shuffling later
-        return len_phrases, list(phrases_indices_to_order)
+        return len_phrases, list(phrases_indices)
 
 
 
