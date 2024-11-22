@@ -98,15 +98,17 @@ class Transformation(ReprMixin, ABC):
 
         if index_to_modify is not None:
             transformed_texts = self._get_transformations(current_text, indices_to_modify)
-        if phrases_indices is not None:
-            transformed_texts_phrases = self._get_transformations_phrases(current_text, phrases_indices)
-
-        for text in transformed_texts:
+            for text in transformed_texts:
             text.attack_attrs["last_transformation"] = self
         return transformed_texts
-        for text in transformed_texts_phrases:
+        
+        if phrases_indices is not None:
+            transformed_texts_phrases = self._get_transformations_phrases(current_text, phrases_indices)
+            for text in transformed_texts_phrases:
             text.attack_attrs["last_transformation"] = self
         return transformed_texts_phrases    
+        
+        
 
     @abstractmethod
     def _get_transformations(self, current_text, indices_to_modify):
