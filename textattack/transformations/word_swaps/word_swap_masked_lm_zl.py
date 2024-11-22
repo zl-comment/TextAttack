@@ -13,14 +13,7 @@ from textattack.shared import utils
 
 from .word_swap import WordSwap
 import os
-from nltk import ngrams
-from collections import Counter
-
-import logging
-import spacy as spacy
-# 加载 spacy 的小型英语模型
-nlp = spacy.load('en_core_web_sm')
-
+from textattack import LocalPathConfig
 
 class WordSwapMaskedLM_zl(WordSwap):
     """Generate potential replacements for a word using a masked language
@@ -77,9 +70,9 @@ class WordSwapMaskedLM_zl(WordSwap):
         self.batch_size = batch_size
         #加载预训练的模型的tokenizer和model
         if isinstance(masked_language_model, str):
-            masked_language_model_cache = "/home/cyh/ZLCODE/google/bert-base-uncased"
+            masked_language_model_cache = LocalPathConfig.BERT_BASE_UNCASED
             if os.path.exists(masked_language_model_cache):  # 如果是本地路径
-                print(f"Loading local model from {masked_language_model_cache} zl")
+                print(f"Loading local model from {masked_language_model_cache}")
                 self._language_model = AutoModelForMaskedLM.from_pretrained(masked_language_model_cache)
                 self._lm_tokenizer = AutoTokenizer.from_pretrained(masked_language_model_cache, use_fast=True)
             else:  # 从Hugging Face加载模型
@@ -112,8 +105,6 @@ class WordSwapMaskedLM_zl(WordSwap):
             return_tensors="pt",
         )
         return encoding.to(utils.device)
-
-
 
     def _bae_replacement_words(self, current_text, indices_to_modify):
         """使用 BAE 方法获取要替换的单词的替换词。
@@ -189,418 +180,216 @@ class WordSwapMaskedLM_zl(WordSwap):
         return replacement_words
 
     # def _bert_attack_replacement_words(
-    #         self,
-    #         current_text,
-    #         index,
-    #         id_preds,
-    #         masked_lm_logits,
+    #     self,
+    #     current_text,
+    #     index,
+    #     id_preds,
+    #     masked_lm_logits,
     # ):
-    #     """使用 BERT 攻击方法获取要替换单词的替换词，现支持双词替换（bigram）。"""
+    #     """Get replacement words for the word we want to replace using BERT-
+    #     Attack method.
     #
-    #     # 检查是否可以形成双词
-    #     if index > 0:  # 确保前面有一个词
-    #         bigram_masked_text = current_text.replace_word_at_index(
-    #             index - 1, self._lm_tokenizer.mask_token + " " + self._lm_tokenizer.mask_token
-    #         )
-    #         current_inputs = self._encode_text(bigram_masked_text.text)
-    #         current_ids = current_inputs["input_ids"].tolist()[0]
-    #
-    #         # 找到双词掩码的索引
-    #         masked_indices = [
-    #             current_ids.index(self._lm_tokenizer.mask_token_id),
-    #             current_ids.index(self._lm_tokenizer.mask_token_id,
-    #                               current_ids.index(self._lm_tokenizer.mask_token_id) + 1)
-    #         ]
-    #
-    #         top_preds = [id_preds[i] for i in masked_indices]
-    #
-    #         products = itertools.product(*top_preds)
-    #         combination_results = []
-    #         cross_entropy_loss = torch.nn.CrossEntropyLoss(reduction="none")
-    #
-    #         for bpe_tokens in products:
-    #             word_tensor = torch.tensor(bpe_tokens, dtype=torch.long)
-    #             logits = masked_lm_logits[masked_indices]
-    #             loss = cross_entropy_loss(logits, word_tensor)
-    #             perplexity = torch.exp(torch.mean(loss)).item()
-    #
-    #             # 将 token ID 转换为词并去除 BPE 伪影
-    #             word = " ".join(self._lm_tokenizer.convert_ids_to_tokens(bpe_tokens)).replace("##", "")
-    #             if utils.is_one_word(word) and word.isalpha():  # 检查是否为单个有效词
-    #                 combination_results.append((word, perplexity))
-    #
-    #         # 排序以获取前 K 个结果
-    #         sorted_results = sorted(combination_results, key=lambda x: x[1])
-    #         top_replacements = [x[0] for x in sorted_results[:self.max_candidates]]
-    #         return top_replacements
-    #
-    #     # 单词替换的后备处理
-    #     masked_text = current_text.replace_word_at_index(index, self._lm_tokenizer.mask_token)
+    #     Args:
+    #         current_text (AttackedText): Text we want to get replacements for.
+    #         index (int): index of word we want to replace
+    #         id_preds (torch.Tensor): N x K tensor of top-K ids for each token-position predicted by the masked language model.
+    #             N is equivalent to `self.max_length`.
+    #         masked_lm_logits (torch.Tensor): N x V tensor of the raw logits outputted by the masked language model.
+    #             N is equivlaent to `self.max_length` and V is dictionary size of masked language model.
+    #     """
+    #     # We need to find which BPE tokens belong to the word we want to replace
+    #     masked_text = current_text.replace_word_at_index(
+    #         index, self._lm_tokenizer.mask_token
+    #     )
     #     current_inputs = self._encode_text(masked_text.text)
     #     current_ids = current_inputs["input_ids"].tolist()[0]
-    #     word_tokens = self._lm_tokenizer.encode(current_text.words[index], add_special_tokens=False)
+    #     word_tokens = self._lm_tokenizer.encode(
+    #         current_text.words[index], add_special_tokens=False
+    #     )
     #
     #     try:
+    #         # Need try-except b/c mask-token located past max_length might be truncated by tokenizer
     #         masked_index = current_ids.index(self._lm_tokenizer.mask_token_id)
     #     except ValueError:
     #         return []
     #
-    #     target_ids_pos = list(range(masked_index, min(masked_index + len(word_tokens), self.max_length)))
+    #     # List of indices of tokens that are part of the target word
+    #     target_ids_pos = list(
+    #         range(masked_index, min(masked_index + len(word_tokens), self.max_length))
+    #     )
     #
     #     if not len(target_ids_pos):
     #         return []
     #     elif len(target_ids_pos) == 1:
+    #         # Word to replace is tokenized as a single word
     #         top_preds = id_preds[target_ids_pos[0]].tolist()
     #         replacement_words = []
     #         for id in top_preds:
     #             token = self._lm_tokenizer.convert_ids_to_tokens(id)
-    #
-    #             # 检查 token 是否为单个有效词且不是子词
-    #             if utils.is_one_word(token) and token.isalpha() and not utils.check_if_subword(token,
-    #                                                                                            self._language_model.config.model_type,
-    #                                                                                            index == 0):
+    #             if utils.is_one_word(token) and not utils.check_if_subword(
+    #                 token, self._language_model.config.model_type, index == 0
+    #             ):
     #                 replacement_words.append(token)
     #         return replacement_words
     #     else:
+    #         # Word to replace is tokenized as multiple sub-words
     #         top_preds = [id_preds[i] for i in target_ids_pos]
     #         products = itertools.product(*top_preds)
     #         combination_results = []
+    #         # Original BERT-Attack implement uses cross-entropy loss
     #         cross_entropy_loss = torch.nn.CrossEntropyLoss(reduction="none")
     #         target_ids_pos_tensor = torch.tensor(target_ids_pos)
-    #
+    #         word_tensor = torch.zeros(len(target_ids_pos), dtype=torch.long)
     #         for bpe_tokens in products:
-    #             word_tensor = torch.tensor(bpe_tokens, dtype=torch.long)
+    #             for i in range(len(bpe_tokens)):
+    #                 word_tensor[i] = bpe_tokens[i]
+    #
     #             logits = torch.index_select(masked_lm_logits, 0, target_ids_pos_tensor)
     #             loss = cross_entropy_loss(logits, word_tensor)
     #             perplexity = torch.exp(torch.mean(loss, dim=0)).item()
-    #
-    #             # 合并 tokens 为一个词并去除 BPE 伪影
-    #             word = "".join(self._lm_tokenizer.convert_ids_to_tokens(word_tensor)).replace("##", "")
-    #             if utils.is_one_word(word) and word.isalpha():  # 检查是否为单个有效词
+    #             word = "".join(
+    #                 self._lm_tokenizer.convert_ids_to_tokens(word_tensor)
+    #             ).replace("##", "")
+    #             if utils.is_one_word(word):
     #                 combination_results.append((word, perplexity))
-    #
-    #         # 排序并返回前 K 个替换词
-    #         sorted_results = sorted(combination_results, key=lambda x: x[1])
-    #         top_replacements = [x[0] for x in sorted_results[:self.max_candidates]]
+    #         # Sort to get top-K results
+    #         sorted(combination_results, key=lambda x: x[1])
+    #         top_replacements = [
+    #             x[0] for x in combination_results[: self.max_candidates]
+    #         ]
     #         return top_replacements
-    def _replace_text(self,text, start_idx, length, replacement):
-        # 将文本分成两部分：替换部分和其余部分
-        before = text.text[:start_idx]
-        after = text.text[start_idx + length:]
-        # 组合新的文本
-        new_text= before + replacement + after
-        # 创建并返回一个新的 AttackedText 对象
-        return new_text
-
-
-    # def _bert_attack_replacement_words(
-    #         self,
-    #         current_text,
-    #         start_idx,
-    #         id_preds,
-    #         masked_lm_logits,
-    #         end_idx=None  # 默认 None，用于区分单词和短语的替换
-    # ):
-    #     """
-    #     使用 BERT 攻击方法获取要替换词，包括单词和短语替换。
-    #     :param start_idx: 替换位置的起始索引（单词或短语的第一个词索引）。
-    #     :param id_preds: 模型预测的 top-k 结果。
-    #     :param masked_lm_logits: 掩码语言模型的 logits 结果。
-    #     :param end_idx: 如果是短语替换，表示短语结束索引；否则为 None 表示单词替换。
-    #     :return: 替换候选词列表。
-    #     """
-    #
-    #     # 如果传入了 end_idx，说明需要替换的是短语
-    #     if end_idx is not None and end_idx > start_idx:
-    #         # 计算短语长度
-    #         phrase_len = end_idx - start_idx + 1
-    #
-    #         # 替换短语，使用连续的 mask tokens
-    #         replacement_phrase = " ".join(["[MASK]"] * phrase_len)
-    #         masked_text = self._replace_text(current_text, start_idx, phrase_len,replacement_phrase)
-    #     else:
-    #         # 单词替换，使用单个 mask token
-    #         replacement_word = "[MASK]"
-    #         masked_text = self._replace_text(current_text, start_idx, 1,replacement_word)
-    #
-    #     # 编码 masked_text
-    #     current_inputs = self._encode_text(masked_text)
-    #     current_ids = current_inputs["input_ids"].tolist()[0]
-    #
-    #     # 获取所有 mask 的索引
-    #     masked_indices = [i for i, token_id in enumerate(current_ids) if token_id == self._lm_tokenizer.mask_token_id]
-    #
-    #     if not masked_indices:
-    #         return []
-    #
-    #     # 获取每个掩码位置的 top-k 预测结果
-    #     top_preds = [id_preds[i] for i in masked_indices]
-    #
-    #     # 对每个掩码位的 top-k 候选词进行组合（如有多个掩码位）
-    #     products = itertools.product(*top_preds)
-    #     combination_results = []
-    #     cross_entropy_loss = torch.nn.CrossEntropyLoss(reduction="none")
-    #
-    #     for bpe_tokens in products:
-    #         word_tensor = torch.tensor(bpe_tokens, dtype=torch.long)
-    #         logits = torch.index_select(masked_lm_logits, 0, torch.tensor(masked_indices))
-    #         loss = cross_entropy_loss(logits, word_tensor)
-    #         perplexity = torch.exp(torch.mean(loss, dim=0)).item()
-    #
-    #         # 合并 token IDs 为词或短语，去除 BPE 伪影（例如“##”）
-    #         replacement = " ".join(self._lm_tokenizer.convert_ids_to_tokens(bpe_tokens)).replace("##", "").strip()
-    #
-    #         # 检查是否为有效词或短语
-    #         if utils.is_valid_word(replacement) and replacement.isalpha():
-    #             combination_results.append((replacement, perplexity))
-    #
-    #     # 根据 perplexity 排序，并返回 top-k 替换词
-    #     sorted_results = sorted(combination_results, key=lambda x: x[1])
-    #     top_replacements = [x[0] for x in sorted_results[:self.max_candidates]]
-    #
-    #     return top_replacements
     def _bert_attack_replacement_words(
             self,
             current_text,
-            start_idx,
+            index,
             id_preds,
             masked_lm_logits,
-            end_idx=None  # 默认 None，用于区分单词和短语的替换
     ):
+        """使用BERT-Attack方法获取要替换的单词的替换词。
+
+        参数:
+            current_text (AttackedText): 我们希望获取替换词的文本，包含被攻击的单词和上下文。
+            index (int): 要替换的单词在当前文本中的索引位置。
+            id_preds (torch.Tensor): 一个N x K的张量，包含由掩蔽语言模型预测的每个标记位置的前K个id。
+                N表示文本的最大长度，即`self.max_length`，K表示每个位置的候选单词数量。
+            masked_lm_logits (torch.Tensor): 一个N x V的张量，包含掩蔽语言模型输出的原始logits。
+                N表示文本的最大长度，V是掩蔽语言模型的词典大小，logits用于计算替换单词的可能性。
         """
-        使用 BERT 攻击方法获取要替换词，包括单词和短语替换。
-        :param start_idx: 替换位置的起始索引（单词或短语的第一个词索引）。
-        :param id_preds: 模型预测的 top-k 结果。
-        :param masked_lm_logits: 掩码语言模型的 logits 结果。
-        :param end_idx: 如果是短语替换，表示短语结束索引；否则为 None 表示单词替换。
-        :return: 替换候选词列表。
-        """
+        # 1. 找到需要替换的单词在当前文本中的BPE标记。
+        # 将要替换的单词替换为掩蔽标记（mask token）。
+        masked_text = current_text.replace_word_at_index(
+            index, self._lm_tokenizer.mask_token
+        )
 
-        # 如果传入了 end_idx，说明需要替换的是短语
-        if end_idx is not None and end_idx > start_idx:
-            # 计算短语长度
-            phrase_len = end_idx - start_idx + 1
+        # 2. 编码掩蔽后的文本以获取输入ID。
+        current_inputs = self._encode_text(masked_text.text)
+        current_ids = current_inputs["input_ids"].tolist()[0]  # 获取编码后的input_ids
 
-            # 替换短语，使用连续的 mask tokens
-            replacement_phrase = " ".join(["[MASK]"] * phrase_len)
-            masked_text = self._replace_text(current_text, start_idx, phrase_len, replacement_phrase)
+        # 3. 将当前文本中要替换的单词进行编码以获取其BPE标记。
+        word_tokens = self._lm_tokenizer.encode(
+            current_text.words[index], add_special_tokens=False
+        )
 
-            # 编码 masked_text
-            current_inputs = self._encode_text(masked_text)  # 确保使用 .text 获取文本
-            current_ids = current_inputs["input_ids"].tolist()[0]
+        try:
+            # 4. 尝试找到掩蔽标记在输入ID中的索引位置。
+            # 如果掩蔽标记位于最大长度之外，则可能会导致截断，因此使用try-except处理。
+            masked_index = current_ids.index(self._lm_tokenizer.mask_token_id)
+        except ValueError:
+            # 如果没有找到掩蔽标记，返回空列表表示没有可替换的单词。
+            return []
 
-            # 获取所有 mask 的索引
-            masked_indices = [i for i, token_id in enumerate(current_ids) if
-                              token_id == self._lm_tokenizer.mask_token_id]
-            if not masked_indices:
-                return []
+        # 5. 创建目标单词的标记索引列表，计算该单词在编码文本中的位置。
+        target_ids_pos = list(
+            range(masked_index, min(masked_index + len(word_tokens), self.max_length))
+        )
 
-            top_preds = [id_preds[i] for i in masked_indices]
-
-            products = itertools.product(*top_preds)
-            combination_results = []
+        # 6. 检查目标标记位置是否存在
+        if not len(target_ids_pos):
+            # 如果没有找到目标标记位置，返回空列表。
+            return []
+        elif len(target_ids_pos) == 1:
+            # 7. 如果目标单词被标记化为单个标记。
+            top_preds = id_preds[target_ids_pos[0]].tolist()  # 获取该位置的前K个预测ID
+            replacement_words = []  # 用于存储有效的替换单词
+            for id in top_preds:
+                # 将ID转换为单词
+                token = self._lm_tokenizer.convert_ids_to_tokens(id)
+                # 检查该单词是否是一个完整的单词，并且不是子词
+                if utils.is_one_word(token) and not utils.check_if_subword(
+                        token, self._language_model.config.model_type, index == 0
+                ):
+                    replacement_words.append(token)  # 将有效的替换单词加入列表
+            return replacement_words
+        else:
+            # 8. 如果目标单词被标记化为多个子词。
+            top_preds = [id_preds[i] for i in target_ids_pos]  # 获取目标标记位置的预测ID
+            products = itertools.product(*top_preds)  # 计算所有可能的BPE标记组合
+            combination_results = []  # 存储组合结果
+            # 原始BERT-Attack实现使用交叉熵损失来评估组合的有效性
             cross_entropy_loss = torch.nn.CrossEntropyLoss(reduction="none")
+            target_ids_pos_tensor = torch.tensor(target_ids_pos)  # 转换为张量
+            word_tensor = torch.zeros(len(target_ids_pos), dtype=torch.long)  # 用于存储BPE标记的张量
 
             for bpe_tokens in products:
-                word_tensor = torch.tensor(bpe_tokens, dtype=torch.long)
-                logits = torch.index_select(masked_lm_logits, 0, torch.tensor(masked_indices))
-                loss = cross_entropy_loss(logits, word_tensor)
-                perplexity = torch.exp(torch.mean(loss, dim=0)).item()
+                for i in range(len(bpe_tokens)):
+                    word_tensor[i] = bpe_tokens[i]  # 将当前BPE标记存入word_tensor
 
-                # 合并 token IDs 为短语，去除 BPE 伪影（例如“##”）
-                replacement = " ".join(self._lm_tokenizer.convert_ids_to_tokens(bpe_tokens)).replace("##", "").strip()
+                # 9. 从masked_lm_logits中选择与目标标记位置对应的logits。
+                logits = torch.index_select(masked_lm_logits, 0, target_ids_pos_tensor)
+                loss = cross_entropy_loss(logits, word_tensor)  # 计算损失
+                perplexity = torch.exp(torch.mean(loss, dim=0)).item()  # 计算困惑度
+                word = "".join(
+                    self._lm_tokenizer.convert_ids_to_tokens(word_tensor)
+                ).replace("##", "")  # 将BPE标记转换为单词，并去除子词标记符号
 
-                # 检查是否为有效短语
-                if utils.is_valid_word(replacement) and replacement.isalpha():
-                    combination_results.append((replacement, perplexity))
+                # 10. 检查组合结果是否是一个完整单词。
+                if utils.is_one_word(word):
+                    combination_results.append((word, perplexity))  # 存储有效组合及其困惑度
 
-        else:
-            # 单词替换，使用单个 mask token
-            replacement_word = "[MASK]"
-            masked_text = self._replace_text(current_text, start_idx, 1, replacement_word)
-
-            # 编码 masked_text
-            current_inputs = self._encode_text(masked_text)
-            current_ids = current_inputs["input_ids"].tolist()[0]
-
-            try:
-                masked_index = current_ids.index(self._lm_tokenizer.mask_token_id)
-            except ValueError:
-                return []
-
-            # 获取单词的 top-k 预测结果
-            top_preds = id_preds[masked_index].tolist()
-            combination_results = []
-
-            for id in top_preds:
-                token = self._lm_tokenizer.convert_ids_to_tokens(id)
-                # 检查 token 是否为单个有效词且不是子词
-                if utils.is_one_word(token) and token.isalpha():
-                    combination_results.append((token, 0))  # 假设单词的 perplexity 为 0
-
-        # 根据 perplexity 排序，并返回 top-k 替换词
-        sorted_results = sorted(combination_results, key=lambda x: x[1])
-        top_replacements = [x[0] for x in sorted_results[:self.max_candidates]]
-
-        return top_replacements
-
-    def _get_phrases(self, doc):
-        """
-        使用 spacy 识别名词短语和动词短语，并返回它们在句子中的起始和结束位置。
-        """
-        phrases = []
-
-        # 提取名词短语（noun phrases）
-        for chunk in doc.noun_chunks:
-            phrases.append((chunk.start, chunk.end, chunk.text, "NP"))
-
-        # 提取动词短语（verb phrases），这里用动词及其依赖的宾语来代表动词短语
-        for token in doc:
-            if token.pos_ == "VERB":  # 如果是动词
-                verb_phrase = [token.text]
-                for child in token.children:
-                    if child.dep_ in ("dobj", "prep", "advmod"):  # 处理直接宾语、介词短语等
-                        verb_phrase.append(child.text)
-                phrases.append((token.i, token.i + len(verb_phrase), " ".join(verb_phrase), "VP"))
-
-        return phrases
+            # 11. 对组合结果按困惑度排序，以获取前K个结果。
+            sorted(combination_results, key=lambda x: x[1])
+            top_replacements = [
+                x[0] for x in combination_results[: self.max_candidates]  # 提取前K个替换单词
+            ]
+            return top_replacements  # 返回替换单词列表
 
     def _get_transformations(self, current_text, indices_to_modify):
-
-        # indices_to_modify = list(indices_to_modify)
-        # if self.method == "bert-attack":
-        #     # 配置 logging 记录模型不符合规定的输出
-        #     logging.basicConfig(filename='/home/cyh/ZLCODE/promptbench/examples/invalid_inputs.log',
-        #                         format='%(asctime)s %(filename)s %(levelname)s %(message)s',
-        #                         datefmt='%a %d %b %Y %H:%M:%S',
-        #                         level=logging.INFO)
-        #
-        #     # 假设 current_text.text 是待处理的文本
-        #     text = current_text.text
-        #     # 提取二元组
-        #     bigrams = list(ngrams(text.split(), 2))
-        #     bigram_counts = Counter(bigrams)
-        #     most_common_bigrams = bigram_counts.most_common()
-        #
-        #     # 创建一个字典以快速查找二元组
-        #     bigram_dict = {f"{bigram[0]} {bigram[1]}": i for i, bigram in enumerate(most_common_bigrams)}
-        #     logging.info(f"bigram_dict: {bigram_dict}")
-        #     indices_to_modify = list(indices_to_modify)
-        #     if self.method == "bert-attack":
-        #         # 编码当前文本
-        #         current_inputs = self._encode_text(text)
-        #
-        #         # 禁用梯度计算，进行前向传播
-        #         with torch.no_grad():
-        #             pred_probs = self._language_model(**current_inputs)[0][0]
-        #
-        #         # 获取每个位置的前max_candidates个预测词汇及其概率
-        #         top_probs, top_ids = torch.topk(pred_probs, self.max_candidates)
-        #         id_preds = top_ids.cpu()
-        #         masked_lm_logits = pred_probs.cpu()
-        #
-        #         transformed_texts = []
-        #
-        #         # 对于每个需要修改的索引
-        #         for i in indices_to_modify:
-        #             word_at_index = current_text.words[i]
-        #
-        #             # 检查当前索引前后是否有形成二元组
-        #             if i > 0 and f"{current_text.words[i - 1]} {word_at_index}" in bigram_dict:
-        #                 bigram = f"{current_text.words[i - 1]} {word_at_index}"
-        #
-        #                 replacement_words = self._bert_attack_replacement_words(
-        #                     current_text,s
-        #                     i - 1,  # 使用第一个词的索引
-        #                     id_preds=id_preds,
-        #                     masked_lm_logits=masked_lm_logits,
-        #                 )
-        #                 # 对于每个替换词应用到原文本中
-        #                 for r in replacement_words:
-        #                     transformed_texts.append(current_text.replace_word_at_index(i - 1, r))
-        #             else:
-        #                 # 获取替换词（对于单个词）
-        #                 replacement_words = self._bert_attack_replacement_words(
-        #                     current_text,
-        #                     i,
-        #                     id_preds=id_preds,
-        #                     masked_lm_logits=masked_lm_logits,
-        #                 )
-        #                 # 将替换词应用到原文本中
-        #                 for r in replacement_words:
-        #                     r = r.strip("Ġ")
-        #                     if r != word_at_index:
-        #                         transformed_texts.append(
-        #                             current_text.replace_word_at_index(i, r)
-        #                         )
-        #
-        #         # 返回变换后的文本
-        #         return transformed_texts
-            # 配置 logging 记录模型不符合规定的输出
-        logging.basicConfig(filename='/home/cyh/ZLCODE/promptbench/examples/invalid_inputs.log',
-                                format='%(asctime)s %(filename)s %(levelname)s %(message)s',
-                                datefmt='%a %d %b %Y %H:%M:%S',
-                                level=logging.INFO)
-
-        text = current_text.text
-        doc = nlp(text)  # 使用 spacy 解析文本
-
-        # 识别名词短语和动词短语
-        phrases = self._get_phrases(doc)
-
-        # 记录需要替换的短语的起始和结束位置
-        indices_to_modify = []
-
-        for start_idx, end_idx, phrase_text, phrase_type in phrases:
-            indices_to_modify.extend(list(range(start_idx, end_idx)))
-
-        logging.info(f"Phrases to modify: {phrases}")
-
+        
+        indices_to_modify = list(indices_to_modify)
         if self.method == "bert-attack":
             # 编码当前文本
-            current_inputs = self._encode_text(text)
+            current_inputs = self._encode_text(current_text.text)
 
             # 禁用梯度计算，进行前向传播
             with torch.no_grad():
                 pred_probs = self._language_model(**current_inputs)[0][0]
 
-            # 获取每个位置的前 max_candidates 个预测词汇及其概率
+            # 获取每个位置的前max_candidates个预测词汇及其概率
             top_probs, top_ids = torch.topk(pred_probs, self.max_candidates)
             id_preds = top_ids.cpu()
             masked_lm_logits = pred_probs.cpu()
 
             transformed_texts = []
 
-            # 对每个短语进行替换
-            for start_idx, end_idx, phrase_text, phrase_type in phrases:
+            # 对于每个需要修改的索引
+            for i in indices_to_modify:
+                word_at_index = current_text.words[i]
+
+                # 获取替换词
                 replacement_words = self._bert_attack_replacement_words(
                     current_text,
-                    start_idx,  # 使用短语的第一个词的索引
+                    i,
                     id_preds=id_preds,
                     masked_lm_logits=masked_lm_logits,
-                    end_idx=end_idx  # 传递短语的结束索引
                 )
 
-                # 对每个替换词应用到原文本中
+                # 将替换词应用到原文本中
                 for r in replacement_words:
-                    transformed_texts.append(current_text.replace_phrase(start_idx, end_idx, r))
-
-            # 现在处理单词的替换
-            for i in range(len(doc)):
-                # 如果单词不在需要修改的短语索引中，则处理单词
-                if i not in indices_to_modify:
-                    replacement_words = self._bert_attack_replacement_words(
-                        current_text,
-                        i,  # 当前单词的索引
-                        id_preds=id_preds,
-                        masked_lm_logits=masked_lm_logits
-                    )
-
-                    # 对每个替换词应用到原文本中
-                    for r in replacement_words:
-                        r = r.strip("Ġ")  # BERT tokenizer 有时会添加 Ġ 字符，移除它
-                        if r != current_text.words[i]:  # 保证替换词不与原始单词相同
-                            transformed_texts.append(current_text.replace_word_at_index(i, r))
+                    r = r.strip("Ġ")
+                    if r != word_at_index:
+                        transformed_texts.append(
+                            current_text.replace_word_at_index(i, r)
+                        )
 
             # 返回变换后的文本
             return transformed_texts
