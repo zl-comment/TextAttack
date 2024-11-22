@@ -138,7 +138,9 @@ class GreedyWordSwapWIR(SearchMethod):
         cur_result = initial_result
         results = None
         #indices_to_modify的入参在这里
+        print("index_order:",index_order)
         while i < len(index_order) and not search_over:#按照index_order的顺序进行替换
+        print("index_order[i]:",index_order[i])
             transformed_text_candidates = self.get_transformations(
                 cur_result.attacked_text,
                 original_text=initial_result.attacked_text,
