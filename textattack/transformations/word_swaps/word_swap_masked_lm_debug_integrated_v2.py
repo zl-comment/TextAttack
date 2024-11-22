@@ -524,6 +524,7 @@ class WordSwapMaskedLM_zl(WordSwap):
             for id in top_preds:
                 # 将ID转换为短语
                 phrase = self._lm_tokenizer.convert_ids_to_tokens(id)
+                print(f"phrase_key: {phrase}")
                 # 检查该短语是否是一个完整的短语，并且不是子词
                 if utils.is_one_word(phrase) and not utils.check_if_subword(
                         phrase, self._language_model.config.model_type, start_idx == 0
@@ -658,7 +659,8 @@ class WordSwapMaskedLM_zl(WordSwap):
                 print(f"DEBUG: Replacement phrases: {replacement_phrases}")
                 for replacement_phrase in replacement_phrases:
                     replacement_phrase = replacement_phrase.strip("Ġ")
-                    original_phrase = " ".join(current_text.words[start_idx:end_idx])
+                    for i in range(start_idx, end_idx):
+                        original_phrase = " ".join(current_text.words[i])
                     if replacement_phrase != original_phrase:
                         transformed_text = current_text.replace_phrase_at_index(range(start_idx, end_idx), replacement_phrase)
                         print(f"DEBUG: Transformed text with replacement phrase '{replacement_phrase}': {transformed_text}")
