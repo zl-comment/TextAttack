@@ -58,7 +58,7 @@ class Transformation(ReprMixin, ABC):
             self.nlp = spacy.load("en_core_web_sm")  # Load the spaCy model
             phrases_indices_to_order = set()
             # 提取名词短语
-            relevant_text = " ".join(current_text.text[i] for i in indices_to_order)
+            relevant_text = " ".join(current_text.text[i] for i in indices_to_modify)
             for chunk in self.nlp(relevant_text).noun_chunks:
                 phrases_indices_to_order.add((chunk.start, chunk.end, "noun-phrase"))
 
