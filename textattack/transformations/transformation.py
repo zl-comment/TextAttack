@@ -52,6 +52,13 @@ class Transformation(ReprMixin, ABC):
             indices_to_modify = set(
                 current_text.convert_from_original_idxs(indices_to_modify)
             )
+        
+
+        for constraint in pre_transformation_constraints:
+            indices_to_modify = indices_to_modify & constraint(current_text, self)
+            # phrases_indices = set(phrases_indices) & constraint(current_text, self)
+
+        
         #增加了返回短语 已经是经过筛选的
         if phrases_indices is  None:
             self.nlp = spacy.load("en_core_web_sm")  # Load the spaCy model
@@ -82,13 +89,7 @@ class Transformation(ReprMixin, ABC):
             phrases_indices = sorted(phrases_indices, key=lambda x: x[0])
         else:
             phrases_indices = set(phrases_indices)
-
-        for constraint in pre_transformation_constraints:
-            indices_to_modify = indices_to_modify & constraint(current_text, self)
-            phrases_indices = set(phrases_indices) & constraint(current_text, self)
-
-        
-
+            
         if return_indices:
             return indices_to_modify
         #增加了返回短语的确定
