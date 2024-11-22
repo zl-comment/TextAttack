@@ -354,7 +354,7 @@ class WordSwapMaskedLM(WordSwap):
             return top_replacements  # 返回替换单词列表
 
     def _get_transformations(self, current_text, indices_to_modify):
-        print("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq")
+        print(phrases_indices)
         indices_to_modify = list(indices_to_modify)
         if self.method == "bert-attack":
             # 编码当前文本
