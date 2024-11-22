@@ -568,6 +568,8 @@ class WordSwapMaskedLM_zl(WordSwap):
         phrases_indices = [phrases_indices]
         transformed_texts = []
         for start_idx, end_idx, idx_type in phrases_indices:
+            start_idx = int(start_idx)
+            end_idx = int(end_idx)
             if idx_type == 'single-word':
                 # 处理单词
                 word_at_index = current_text.words[start_idx]
@@ -599,6 +601,7 @@ class WordSwapMaskedLM_zl(WordSwap):
 
             else:
                 # 处理短语
+                phrase = []
                 for i in range(start_idx, end_idx):
                     phrase.append(current_text.words[i])
                 current_inputs = self._encode_text(" ".join(phrase))
