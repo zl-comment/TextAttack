@@ -101,13 +101,13 @@ class Transformation(ReprMixin, ABC):
             transformed_texts = self._get_transformations(current_text, indices_to_modify)
             for text in transformed_texts:
                 text.attack_attrs["last_transformation"] = self
-        return transformed_texts
+            return transformed_texts
 
         else :
             transformed_texts_phrases = self._get_transformations_phrases(current_text, phrases_indices)
             for text in transformed_texts_phrases:
                 text.attack_attrs["last_transformation"] = self
-        return transformed_texts_phrases    
+            return transformed_texts_phrases    
         
         
 
