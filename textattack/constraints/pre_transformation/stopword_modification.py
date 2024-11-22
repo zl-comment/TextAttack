@@ -46,6 +46,7 @@ class StopwordModification(PreTransformationConstraint):
     def _get_modifiable_indices(self, current_text):
         """Returns the word indices in ``current_text`` which are able to be
         modified."""
+        print("停用词测试")
         non_stopword_indices = set()
         for i, word in enumerate(current_text.words):
             if word not in self.stopwords:  # 停用词
