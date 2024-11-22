@@ -352,7 +352,7 @@ class WordSwapMaskedLM_zl(WordSwap):
                 x[0] for x in combination_results[: self.max_candidates]  # 提取前K个替换单词
             ]
             return top_replacements  # 返回替换单词列表
-
+    #对句子的替换
     def _bae_replacement_phrases(self, current_text, start_idx, end_idx):
         """使用 BAE 方法获取要替换的短语的替换词。
 
@@ -423,7 +423,7 @@ class WordSwapMaskedLM_zl(WordSwap):
             i += self.batch_size
 
         return replacement_phrases
-
+    #对句子的替换
     def _bert_attack_replacement_phrases(
             self,
             current_text,
