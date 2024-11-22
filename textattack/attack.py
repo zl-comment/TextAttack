@@ -152,7 +152,7 @@ class Attack:
         # Give search method access to functions for getting transformations and evaluating them
         self.search_method.get_transformations = self.get_transformations
 
-        self.search_method._get_transformations_phrases=self._get_transformations_phrases
+        self.search_method._get_transformations_phrases=self.get_transformations_phrases
         # Give search method access to self.goal_function for model query count, etc.
         self.search_method.goal_function = self.goal_function
         # The search method only needs access to the first argument. The second is only used
