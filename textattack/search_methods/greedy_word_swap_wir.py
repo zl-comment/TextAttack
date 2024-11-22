@@ -142,7 +142,7 @@ class GreedyWordSwapWIR(SearchMethod):
             transformed_text_candidates = self.get_transformations(
                 cur_result.attacked_text,
                 original_text=initial_result.attacked_text,
-                phrases_indices=[index_order[i]],
+                indices_to_modify=[index_order[i]],
             )
             i += 1
             if len(transformed_text_candidates) == 0:#如果没有生成任何变体，继续下一个索引。
