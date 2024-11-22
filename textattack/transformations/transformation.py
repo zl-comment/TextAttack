@@ -85,7 +85,7 @@ class Transformation(ReprMixin, ABC):
 
         for constraint in pre_transformation_constraints:
             indices_to_modify = indices_to_modify & constraint(current_text, self)
-            phrases_indices = phrases_indices & constraint(current_text, self)
+            phrases_indices = set(phrases_indices) & constraint(current_text, self)
 
         
 
