@@ -519,7 +519,7 @@ class WordSwapMaskedLM_zl(WordSwap):
             ]
             return top_replacements  # 返回替换短语列表
 
-    def _get_transformations(self, current_text, phrases_indices):
+    def _get_transformations_phrases(self, current_text, phrases_indices):
         """
         解析 phrases_indices
         """
