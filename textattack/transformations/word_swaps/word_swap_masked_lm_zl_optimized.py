@@ -559,81 +559,184 @@ class WordSwapMaskedLM_zl(WordSwap):
             ]
             return top_replacements  # 返回替换短语列表
 
-    def _get_transformations_phrases(self, current_text, phrases_indices):
-        """
-        解析 phrases_indices
-        """
+    # def _get_transformations_phrases(self, current_text, phrases_indices):
+    #     """
+    #     解析 phrases_indices
+    #     """
         
-        # 将 phrases_indices 转换为列表
-        phrases_indices = list(phrases_indices)
-        print("phrases_indices:", phrases_indices)
-        transformed_texts = []
-        for start_idx, end_idx, idx_type in phrases_indices:
-            start_idx = int(start_idx)
-            end_idx = int(end_idx)
-            if idx_type == 'single-word':
-                # 处理单词
-                word_at_index = current_text.words[start_idx]
-                current_inputs = self._encode_text(current_text.words[start_idx])
-                with torch.no_grad():
-                    pred_probs = self._language_model(**current_inputs)[0][0]
-                top_probs, top_ids = torch.topk(pred_probs, self.max_candidates)
-                id_preds = top_ids.cpu()
-                masked_lm_logits = pred_probs.cpu()
+    #     # 将 phrases_indices 转换为列表
+    #     phrases_indices = list(phrases_indices)
+    #     print("phrases_indices:", phrases_indices)
+    #     transformed_texts = []
+    #     for start_idx, end_idx, idx_type in phrases_indices:
+    #         start_idx = int(start_idx)
+    #         end_idx = int(end_idx)
+    #         if idx_type == 'single-word':
+    #             # 处理单词
+    #             word_at_index = current_text.words[start_idx]
+    #             current_inputs = self._encode_text(current_text.words[start_idx])
+    #             with torch.no_grad():
+    #                 pred_probs = self._language_model(**current_inputs)[0][0]
+    #             top_probs, top_ids = torch.topk(pred_probs, self.max_candidates)
+    #             id_preds = top_ids.cpu()
+    #             masked_lm_logits = pred_probs.cpu()
 
-                if self.method == "bert-attack":
-                    replacement_words = self._bert_attack_replacement_words(
-                        current_text,
-                        start_idx,
-                        id_preds=id_preds,
-                        masked_lm_logits=masked_lm_logits,
-                    )
-                elif self.method == "bae":
-                    replacement_words = self._bae_replacement_words(
-                        current_text, [start_idx]
-                    )[0]
+    #             if self.method == "bert-attack":
+    #                 replacement_words = self._bert_attack_replacement_words(
+    #                     current_text,
+    #                     start_idx,
+    #                     id_preds=id_preds,
+    #                     masked_lm_logits=masked_lm_logits,
+    #                 )
+    #             elif self.method == "bae":
+    #                 replacement_words = self._bae_replacement_words(
+    #                     current_text, [start_idx]
+    #                 )[0]
 
-                for r in replacement_words:
-                    r = r.strip("Ġ")
-                    if r != word_at_index:
-                        transformed_texts.append(
-                            current_text.replace_word_at_index(start_idx, r)
-                        )
+    #             for r in replacement_words:
+    #                 r = r.strip("Ġ")
+    #                 if r != word_at_index:
+    #                     transformed_texts.append(
+    #                         current_text.replace_word_at_index(start_idx, r)
+    #                     )
 
-            else:
-                # 处理短语
-                phrase = []
-                for i in range(start_idx, end_idx):
-                    phrase.append(current_text.words[i])
-                current_inputs = self._encode_text(" ".join(phrase))
-                with torch.no_grad():
-                    pred_probs = self._language_model(**current_inputs)[0][0]
-                top_probs, top_ids = torch.topk(pred_probs, self.max_candidates)
-                id_preds = top_ids.cpu()
-                masked_lm_logits = pred_probs.cpu()
+    #         else:
+    #             # 处理短语
+    #             phrase = []
+    #             for i in range(start_idx, end_idx):
+    #                 phrase.append(current_text.words[i])
+    #             current_inputs = self._encode_text(" ".join(phrase))
+    #             with torch.no_grad():
+    #                 pred_probs = self._language_model(**current_inputs)[0][0]
+    #             top_probs, top_ids = torch.topk(pred_probs, self.max_candidates)
+    #             id_preds = top_ids.cpu()
+    #             masked_lm_logits = pred_probs.cpu()
 
-                if self.method == "bert-attack":
-                    replacement_phrases = self._bert_attack_replacement_phrases(
-                        current_text,
-                        start_idx,
-                        end_idx,
-                        id_preds=id_preds,
-                        masked_lm_logits=masked_lm_logits,
-                    )
-                elif self.method == "bae":
-                    replacement_phrases = self._bae_replacement_phrases(
-                        current_text, start_idx, end_idx
-                    )
+    #             if self.method == "bert-attack":
+    #                 replacement_phrases = self._bert_attack_replacement_phrases(
+    #                     current_text,
+    #                     start_idx,
+    #                     end_idx,
+    #                     id_preds=id_preds,
+    #                     masked_lm_logits=masked_lm_logits,
+    #                 )
+    #             elif self.method == "bae":
+    #                 replacement_phrases = self._bae_replacement_phrases(
+    #                     current_text, start_idx, end_idx
+    #                 )
 
-                for replacement_phrase in replacement_phrases:
-                    replacement_phrase = replacement_phrase.strip("Ġ")
-                    original_phrase = " ".join(current_text.words[start_idx:end_idx])
-                    if replacement_phrase != original_phrase:
-                        transformed_texts.append(
-                            current_text.replace_phrase_at_index(range(start_idx, end_idx), replacement_phrase)
-                        )
+    #             for replacement_phrase in replacement_phrases:
+    #                 replacement_phrase = replacement_phrase.strip("Ġ")
+    #                 original_phrase = " ".join(current_text.words[start_idx:end_idx])
+    #                 if replacement_phrase != original_phrase:
+    #                     transformed_texts.append(
+    #                         current_text.replace_phrase_at_index(range(start_idx, end_idx), replacement_phrase)
+    #                     )
 
-        return transformed_texts
+    #     return transformed_texts
+    def _get_transformations_phrases(self, current_text, phrases_indices):
+    """
+    解析 phrases_indices
+    """
+    # 将 phrases_indices 转换为列表
+    phrases_indices = list(phrases_indices)
+    print("DEBUG: phrases_indices:", phrases_indices)
+    
+    transformed_texts = []
+    for start_idx, end_idx, idx_type in phrases_indices:
+        print(f"DEBUG: Processing index {start_idx}-{end_idx}, type: {idx_type}")
+        
+        start_idx = int(start_idx)
+        end_idx = int(end_idx)
+
+        if idx_type == 'single-word':
+            # 处理单词
+            print(f"DEBUG: Handling single-word at index {start_idx}")
+            word_at_index = current_text.words[start_idx]
+            print(f"DEBUG: Word at index {start_idx}: {word_at_index}")
+            
+            current_inputs = self._encode_text(current_text.words[start_idx])
+            print(f"DEBUG: Encoded input for word '{word_at_index}': {current_inputs}")
+            
+            with torch.no_grad():
+                pred_probs = self._language_model(**current_inputs)[0][0]
+            print(f"DEBUG: Prediction probabilities shape: {pred_probs.shape}")
+            
+            top_probs, top_ids = torch.topk(pred_probs, self.max_candidates)
+            print(f"DEBUG: Top probabilities: {top_probs}, Top IDs: {top_ids}")
+            
+            id_preds = top_ids.cpu()
+            masked_lm_logits = pred_probs.cpu()
+
+            if self.method == "bert-attack":
+                print("DEBUG: Using BERT-Attack for replacements.")
+                replacement_words = self._bert_attack_replacement_words(
+                    current_text,
+                    start_idx,
+                    id_preds=id_preds,
+                    masked_lm_logits=masked_lm_logits,
+                )
+            elif self.method == "bae":
+                print("DEBUG: Using BAE for replacements.")
+                replacement_words = self._bae_replacement_words(
+                    current_text, [start_idx]
+                )[0]
+
+            print(f"DEBUG: Replacement words: {replacement_words}")
+            for r in replacement_words:
+                r = r.strip("Ġ")
+                if r != word_at_index:
+                    transformed_text = current_text.replace_word_at_index(start_idx, r)
+                    print(f"DEBUG: Transformed text with replacement '{r}': {transformed_text}")
+                    transformed_texts.append(transformed_text)
+
+        else:
+            # 处理短语
+            print(f"DEBUG: Handling phrase from index {start_idx} to {end_idx}")
+            phrase = []
+            for i in range(start_idx, end_idx):
+                phrase.append(current_text.words[i])
+            print(f"DEBUG: Original phrase: {' '.join(phrase)}")
+            
+            current_inputs = self._encode_text(" ".join(phrase))
+            print(f"DEBUG: Encoded input for phrase: {current_inputs}")
+            
+            with torch.no_grad():
+                pred_probs = self._language_model(**current_inputs)[0][0]
+            print(f"DEBUG: Prediction probabilities shape: {pred_probs.shape}")
+            
+            top_probs, top_ids = torch.topk(pred_probs, self.max_candidates)
+            print(f"DEBUG: Top probabilities: {top_probs}, Top IDs: {top_ids}")
+            
+            id_preds = top_ids.cpu()
+            masked_lm_logits = pred_probs.cpu()
+
+            if self.method == "bert-attack":
+                print("DEBUG: Using BERT-Attack for phrase replacements.")
+                replacement_phrases = self._bert_attack_replacement_phrases(
+                    current_text,
+                    start_idx,
+                    end_idx,
+                    id_preds=id_preds,
+                    masked_lm_logits=masked_lm_logits,
+                )
+            elif self.method == "bae":
+                print("DEBUG: Using BAE for phrase replacements.")
+                replacement_phrases = self._bae_replacement_phrases(
+                    current_text, start_idx, end_idx
+                )
+
+            print(f"DEBUG: Replacement phrases: {replacement_phrases}")
+            for replacement_phrase in replacement_phrases:
+                replacement_phrase = replacement_phrase.strip("Ġ")
+                original_phrase = " ".join(current_text.words[start_idx:end_idx])
+                if replacement_phrase != original_phrase:
+                    transformed_text = current_text.replace_phrase_at_index(range(start_idx, end_idx), replacement_phrase)
+                    print(f"DEBUG: Transformed text with replacement phrase '{replacement_phrase}': {transformed_text}")
+                    transformed_texts.append(transformed_text)
+
+    print("DEBUG: All transformed texts:", transformed_texts)
+    return transformed_texts
 
 
     def extra_repr_keys(self):
