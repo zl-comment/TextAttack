@@ -98,18 +98,53 @@ class MyCustomSearchMethod(SearchMethod):
 
     def perform_search(self, initial_result):
         """Perform the search using the custom method."""
-        # Implement your custom search logic here
-        #initial_result是GoalFunctionResult类型
-        #attacked_text是AttackedText类型
         attacked_text = initial_result.attacked_text
 
+        # 获取短语和单词的重要性顺序
         phrases_indices_to_order, search_over = self._get_index_order(attacked_text)
-        # Example logic: simply return the initial text
-        #输出重要性排序
-        print(f"phrases_indices_to_order: {phrases_indices_to_order}")
-       
-        
-        return initial_result
+        i = 0
+        cur_result = initial_result
+        results = None
+
+        # 按照 phrases_indices_to_order 的顺序进行替换
+        while i < len(phrases_indices_to_order) and not search_over:
+            # 获取在当前索引位置的转换候选项
+            transformed_text_candidates = self.get_transformations(
+                cur_result.attacked_text,
+                original_text=initial_result.attacked_text,
+                phrases_indices=phrases_indices_to_order[i],
+            )
+            i += 1
+            if len(transformed_text_candidates) == 0:
+                continue
+
+            results, search_over = self.get_goal_results(transformed_text_candidates)
+            results = sorted(results, key=lambda x: -x.score)
+
+            # 跳过那些没有改善分数的替换
+            if results[0].score > cur_result.score:
+                cur_result = results[0]
+            else:
+                continue
+
+            # 如果成功，返回最佳相似度的索引
+            if cur_result.goal_status == GoalFunctionResultStatus.SUCCEEDED:
+                best_result = cur_result
+                max_similarity = -float("inf")
+                for result in results:
+                    if result.goal_status != GoalFunctionResultStatus.SUCCEEDED:
+                        break
+                    candidate = result.attacked_text
+                    try:
+                        similarity_score = candidate.attack_attrs["similarity_score"]
+                    except KeyError:
+                        break
+                    if similarity_score > max_similarity:
+                        max_similarity = similarity_score
+                        best_result = result
+                return best_result
+
+        return cur_result
 
     def check_transformation_compatibility(self, transformation):
         """Since it ranks words by their importance, GreedyWordSwapWIR is
