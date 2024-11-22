@@ -105,11 +105,11 @@ class MyCustomSearchMethod(SearchMethod):
         i = 0
         cur_result = initial_result
         results = None
-
+        print("phrases_indices_to_order:",phrases_indices_to_order)
         # 按照 phrases_indices_to_order 的顺序进行替换
         while i < len(phrases_indices_to_order) and not search_over:
             # 获取在当前索引位置的转换候选项
-            
+            print("phrases_indices_to_order[i]:",phrases_indices_to_order[i])
             transformed_text_candidates = self.get_transformations_phrases(
                 cur_result.attacked_text,
                 original_text=initial_result.attacked_text,
