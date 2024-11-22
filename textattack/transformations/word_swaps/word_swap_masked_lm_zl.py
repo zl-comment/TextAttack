@@ -519,13 +519,13 @@ class WordSwapMaskedLM_zl(WordSwap):
             ]
             return top_replacements  # 返回替换短语列表
 
-    def _get_transformations(self, current_text, indices_to_modify):
+    def _get_transformations(self, current_text, phrases_indices):
         """
-        解析 indices_to_modify
+        解析 phrases_indices
         """
-        print("indices_to_modify:", indices_to_modify)
+        print("phrases_indices:", phrases_indices)
         transformed_texts = []
-        for start_idx, end_idx, idx_type in indices_to_modify:
+        for start_idx, end_idx, idx_type in phrases_indices:
             if idx_type == 'single-word':
                 # 处理单词
                 word_at_index = current_text.words[start_idx]
