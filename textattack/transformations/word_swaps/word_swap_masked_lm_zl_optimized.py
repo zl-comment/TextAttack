@@ -597,7 +597,7 @@ class WordSwapMaskedLM_zl(WordSwap):
                             current_text.replace_word_at_index(start_idx, r)
                         )
 
-            elif idx_type == 'noun-phrase':
+            else:
                 # 处理短语
                 phrase = current_text.words[start_idx:end_idx]
                 current_inputs = self._encode_text(" ".join(phrase))
