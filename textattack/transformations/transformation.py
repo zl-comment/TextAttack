@@ -57,17 +57,27 @@ class Transformation(ReprMixin, ABC):
         if phrases_indices_to_order is  None:
             self.nlp = spacy.load("en_core_web_sm")  # Load the spaCy model
             phrases_indices_to_order = set()
-            # 提取名词短语
+            # 提取名词短语和单词
             relevant_text = " ".join(current_text.text[i] for i in indices_to_modify)
-            for chunk in self.nlp(relevant_text).noun_chunks:
+            doc = self.nlp(relevant_text)
+            covered_indices = set()
+            for chunk in doc.noun_chunks:
                 phrases_indices_to_order.add((chunk.start, chunk.end, "noun-phrase"))
+                covered_indices.update(range(chunk.start, chunk.end))
 
             # 提取动词短语和固定表达式
-            for token in self.nlp(relevant_text):
+            for token in doc:
                 if token.pos_ == "VERB":
                     phrases_indices_to_order.add((token.i, token.i + 1, "verb-phrase"))
+                    covered_indices.add(token.i)
                 elif token.dep_ == "fixed":
                     phrases_indices_to_order.add((token.i, token.i + 1, "fixed-expression"))
+                    covered_indices.add(token.i)
+
+            # 添加未覆盖的单词
+            for token in doc:
+                if token.i not in covered_indices:
+                    phrases_indices_to_order.add((token.i, token.i + 1, "single-word"))
         else:
             phrases_indices_to_order = set(phrases_indices_to_order)
 
