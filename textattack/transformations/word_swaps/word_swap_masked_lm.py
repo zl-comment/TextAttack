@@ -433,7 +433,7 @@ class WordSwapMaskedLM(WordSwap):
         else:
             # 如果方法未被识别，抛出异常
             raise ValueError(f"Unrecognized value {self.method} for `self.method`.")
-
+    #实现父类抽象类
     def _get_transformations_phrases(self, current_text, phrases_indices):
         """Returns a list of all possible transformations for ``current_text``,
         only modifying ``indices_to_modify``. Must be overridden by specific
@@ -444,7 +444,7 @@ class WordSwapMaskedLM(WordSwap):
             indicies_to_modify: Which word indices can be modified.
         """
         raise NotImplementedError()
-        
+
     def extra_repr_keys(self):
         return [
             "method",

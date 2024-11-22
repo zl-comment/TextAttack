@@ -565,7 +565,7 @@ class WordSwapMaskedLM_zl(WordSwap):
         """
         print("phrases_indices:", phrases_indices)
         # 将 phrases_indices 转换为列表
-        phrases_indices = [phrases_indices]
+        phrases_indices = list(phrases_indices)
         transformed_texts = []
         for start_idx, end_idx, idx_type in phrases_indices:
             start_idx = int(start_idx)
