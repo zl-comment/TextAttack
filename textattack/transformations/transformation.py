@@ -96,13 +96,17 @@ class Transformation(ReprMixin, ABC):
         if return_phrases_indices:
             return phrases_indices
 
-        transformed_texts = self._get_transformations(current_text, **kwargs)
+        transformed_texts = self._get_transformations(current_text, indices_to_modify)
+        transformed_texts_phrases = self._get_transformations_phrases(current_text, phrases_indices)
         for text in transformed_texts:
             text.attack_attrs["last_transformation"] = self
         return transformed_texts
-    #测试
+        for text in transformed_texts_phrases:
+            text.attack_attrs["last_transformation"] = self
+        return transformed_texts_phrases    
+
     @abstractmethod
-    def _get_transformations(self, current_text, **kwargs):
+    def _get_transformations(self, current_text, indices_to_modify):
         """Returns a list of all possible transformations for ``current_text``,
         only modifying ``indices_to_modify``. Must be overridden by specific
         transformations.
@@ -113,6 +117,17 @@ class Transformation(ReprMixin, ABC):
         """
         raise NotImplementedError()
 
+    @abstractmethod
+    def _get_transformations_phrases(self, current_text, phrases_indices):
+        """Returns a list of all possible transformations for ``current_text``,
+        only modifying ``indices_to_modify``. Must be overridden by specific
+        transformations.
+
+        Args:
+            current_text: The ``AttackedText`` to transform.
+            indicies_to_modify: Which word indices can be modified.
+        """
+        raise NotImplementedError()
     @property
     def deterministic(self):
         return True
