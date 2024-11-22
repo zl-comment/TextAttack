@@ -365,7 +365,7 @@ class WordSwapMaskedLM_zl(WordSwap):
         # 为每个要修改的索引创建掩码版本的文本
         try:
             masked_text = current_text.replace_phrase_at_index(
-                start_idx, end_idx, [self._lm_tokenizer.mask_token] * (end_idx - start_idx)
+               range(start_idx, end_idx) , [self._lm_tokenizer.mask_token] * (end_idx - start_idx)
             )
         except TypeError as e:
             print(f"Error: {e}")
@@ -458,7 +458,7 @@ class WordSwapMaskedLM_zl(WordSwap):
         # 将要替换的短语替换为掩蔽标记（mask token）。
         try:
             masked_text = current_text.replace_phrase_at_index(
-                start_idx, end_idx, [self._lm_tokenizer.mask_token] * (end_idx - start_idx)
+                 range(start_idx, end_idx), [self._lm_tokenizer.mask_token] * (end_idx - start_idx)
             )
         except TypeError as e:
             print(f"Error: {e}")
