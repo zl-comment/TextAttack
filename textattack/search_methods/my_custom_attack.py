@@ -93,7 +93,7 @@ class MyCustomSearchMethod(SearchMethod):
             phrases_indices_to_order = [phrases_indices[i] for i in index_order]
             search_over = False
         #添加了返回重要性排名
-        
+        print("index_order:",index_order)
         return phrases_indices_to_order, search_over
 
     def perform_search(self, initial_result):
