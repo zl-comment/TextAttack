@@ -151,6 +151,8 @@ class Attack:
 
         # Give search method access to functions for getting transformations and evaluating them
         self.search_method.get_transformations = self.get_transformations
+
+        self.search_method._get_transformations_phrases=self._get_transformations_phrases
         # Give search method access to self.goal_function for model query count, etc.
         self.search_method.goal_function = self.goal_function
         # The search method only needs access to the first argument. The second is only used
@@ -341,6 +343,61 @@ class Attack:
             transformed_texts, current_text, original_text
         )
     #关键函数
+    def _get_transformations_phrases_uncached(self, current_text, original_text=None, **kwargs):
+        """Applies ``self.transformation`` to ``text``, then filters the list
+        of possible transformations through the applicable constraints for phrases.
+
+        Args:
+            current_text: The current ``AttackedText`` on which to perform the transformations.
+            original_text: The original ``AttackedText`` from which the attack started.
+        Returns:
+            A filtered list of transformations where each transformation matches the constraints
+        """
+        transformed_texts_phrases = self.get_transformations_phrases(
+            current_text,   #要攻击的文本
+            pre_transformation_constraints=self.pre_transformation_constraints,  #攻击限制
+            **kwargs,
+        )
+
+        return transformed_texts_phrases
+
+    def get_transformations_phrases(self, current_text, original_text=None, **kwargs):
+        """Applies ``self.transformation`` to ``text``, then filters the list
+        of possible transformations through the applicable constraints for phrases.
+
+        Args:
+            current_text: The current ``AttackedText`` on which to perform the transformations.
+            original_text: The original ``AttackedText`` from which the attack started.
+        Returns:
+            A filtered list of transformations where each transformation matches the constraints
+        """
+        if not self.transformation:
+            raise RuntimeError(
+                "Cannot call `get_transformations_phrases` without a transformation."
+            )
+
+        if self.use_transformation_cache:
+            cache_key = tuple([current_text] + sorted(kwargs.items()))
+            if utils.hashable(cache_key) and cache_key in self.transformation_cache:
+                # promote transformed_text to the top of the LRU cache
+                self.transformation_cache[cache_key] = self.transformation_cache[
+                    cache_key
+                ]
+                transformed_texts_phrases = list(self.transformation_cache[cache_key])
+            else:
+                transformed_texts_phrases = self._get_transformations_phrases_uncached(
+                    current_text, original_text, **kwargs
+                )
+                if utils.hashable(cache_key):
+                    self.transformation_cache[cache_key] = tuple(transformed_texts_phrases)
+        else:
+            transformed_texts_phrases = self._get_transformations_phrases_uncached(
+                current_text, original_text, **kwargs
+            )
+
+        return self.filter_transformations(
+            transformed_texts_phrases, current_text, original_text
+        )
     def _filter_transformations_uncached(
         self, transformed_texts, current_text, original_text=None
     ):
