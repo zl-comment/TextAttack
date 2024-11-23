@@ -92,7 +92,7 @@ class Transformation(ReprMixin, ABC):
 
             # 添加未覆盖的单词
             for token, new_index in non_punct_tokens_with_new_indices:
-                if new_index not in covered_indices:
+                if new_index not in covered_indices and token.pos_ != "PUNCT":
                     phrases_indices.add((new_index, new_index + 1, "single-word"))
 
             # 按 token 序号排序
