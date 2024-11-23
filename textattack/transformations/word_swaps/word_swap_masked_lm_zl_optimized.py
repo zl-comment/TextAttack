@@ -475,6 +475,7 @@ class WordSwapMaskedLM_zl(WordSwap):
         """
         # 1. 找到需要替换的短语在当前文本中的BPE标记。
         # 将要替换的短语替换为掩蔽标记（mask token）。
+        print("开始短语替换")
         try:
             masked_text = current_text.replace_phrase_at_index(
                  range(start_idx, end_idx), [self._lm_tokenizer.mask_token] * (end_idx - start_idx)
