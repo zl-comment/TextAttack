@@ -66,48 +66,44 @@ class Transformation(ReprMixin, ABC):
             phrases_indices = set()
             doc = self.nlp(current_text.text)
 
-            # 创建一个不包含符号的 token 列表，同时重新分配新索引
-            non_punct_tokens_with_new_indices = [
-                (token, new_idx) 
-                for new_idx, token in enumerate(doc) if token.pos_ != "PUNCT"
-            ]
+            # 创建一个不包含符号的 token 列表，同时记录原始索引
+            non_punct_tokens_with_indices = [(token, token.i) for token in doc if token.pos_ != "PUNCT"]
             covered_indices = set()
 
             # 提取名词短语
             for chunk in doc.noun_chunks:
-                # 获取新索引范围，确保符号被排除
-                filtered_tokens = [
-                    (token, new_idx)
-                    for token, new_idx in non_punct_tokens_with_new_indices
-                    if chunk.start <= token.i < chunk.end
-                ]
-                if filtered_tokens:
-                    start = filtered_tokens[0][1]  # 新索引起点
-                    end = filtered_tokens[-1][1] + 1  # 新索引终点
-                    phrases_indices.add((start, end, "noun-phrase"))
-                    covered_indices.update(range(start, end))
+                phrases_indices.add((chunk.start, chunk.end, "noun-phrase"))
+                covered_indices.update(range(chunk.start, chunk.end))
 
             # 提取动词短语和固定表达式
-            for token, new_index in non_punct_tokens_with_new_indices:
+            for token, original_index in non_punct_tokens_with_indices:
                 if token.pos_ == "VERB":
-                    phrases_indices.add((new_index, new_index + 1, "verb-phrase"))
-                    covered_indices.add(new_index)
+                    phrases_indices.add((original_index, original_index + 1, "verb-phrase"))
+                    covered_indices.add(original_index)
                 elif token.dep_ == "fixed":
-                    phrases_indices.add((new_index, new_index + 1, "fixed-expression"))
-                    covered_indices.add(new_index)
+                    phrases_indices.add((original_index, original_index + 1, "fixed-expression"))
+                    covered_indices.add(original_index)
 
             # 添加未覆盖的单词
-            for token, new_index in non_punct_tokens_with_new_indices:
-                if new_index not in covered_indices:
-                    phrases_indices.add((new_index, new_index + 1, "single-word"))
+            for token, original_index in non_punct_tokens_with_indices:
+                if original_index not in covered_indices:
+                    phrases_indices.add((original_index, original_index + 1, "single-word"))
 
             # 按 token 序号排序
             phrases_indices = sorted(phrases_indices, key=lambda x: x[0])
 
-            # 输出提取的短语和单词
+            # 重新标记 phrases_indices 中的 token，从 0 开始
+            remapped_phrases_indices = set()
             for start, end, phrase_type in phrases_indices:
-                phrase = " ".join([token.text for token, _ in non_punct_tokens_with_new_indices[start:end]])
-                print(f"Extracted {phrase_type}: '{phrase}'")
+                new_start = start - phrases_indices[0][0]
+                new_end = end - phrases_indices[0][0]
+                remapped_phrases_indices.add((new_start, new_end, phrase_type))
+            phrases_indices = sorted(remapped_phrases_indices, key=lambda x: x[0])
+
+            # 输出重新标记的短语和单词
+            for start, end, phrase_type in phrases_indices:
+                phrase = " ".join([token.text for token in doc[start:end]])
+                print(f"Remapped {phrase_type}: '{phrase}'")
         else:
             phrases_indices = set(phrases_indices)
             
