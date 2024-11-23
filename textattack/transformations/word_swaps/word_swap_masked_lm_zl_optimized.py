@@ -577,12 +577,12 @@ class WordSwapMaskedLM_zl(WordSwap):
             return top_replacements  # 返回替换短语列表
     #增加批次处理函数
     def batched_iterator(iterable, batch_size):
-    iterator = iter(iterable)
-    while True:
-        batch = list(itertools.islice(iterator, batch_size))
-        if not batch:
-            break
-        yield batch
+        iterator = iter(iterable)
+        while True:
+            batch = list(itertools.islice(iterator, batch_size))
+            if not batch:
+                break
+            yield batch
     def _get_transformations_phrases(self, current_text, phrases_indices):
         """
         解析 phrases_indices
