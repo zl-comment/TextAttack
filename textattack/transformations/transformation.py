@@ -94,22 +94,19 @@ class Transformation(ReprMixin, ABC):
             # 按 token 序号排序
             phrases_indices = sorted(phrases_indices, key=lambda x: x[0])
 
-            # # 重新标记 phrases_indices 中的 token，从 0 开始
-            # remapped_phrases_indices = set()
-            # for start, end, phrase_type in phrases_indices:
-            #     # 检查短语或单词两边是否有符号
-            #     if start > 0 and doc[start - 1].pos_ == "PUNCT":
-            #         new_start = start - 1 
-            #     else:
-            #         new_start = start 
+            # 重新标记 phrases_indices 中的 token，从 0 开始
+            remapped_phrases_indices = set()
+            for start, end, phrase_type in phrases_indices:
+                # 计算短语或单词左侧的符号数量
+                punct_count_left = sum(1 for i in range(start) if doc[i].pos_ == "PUNCT")
+                new_start = start - punct_count_left
 
-            #     if end < len(doc) and doc[end].pos_ == "PUNCT":
-            #         new_end = end - 1 
-            #     else:
-            #         new_end = end 
+                # 计算短语或单词右侧的符号数量
+                punct_count_right = sum(1 for i in range(end, len(doc)) if doc[i].pos_ == "PUNCT")
+                new_end = end - punct_count_left
 
-            #     remapped_phrases_indices.add((new_start, new_end, phrase_type))
-            # phrases_indices = sorted(remapped_phrases_indices, key=lambda x: x[0])
+                remapped_phrases_indices.add((new_start, new_end, phrase_type))
+            phrases_indices = sorted(remapped_phrases_indices, key=lambda x: x[0])
 
             # 输出重新标记的短语和单词
             for start, end, phrase_type in phrases_indices:
