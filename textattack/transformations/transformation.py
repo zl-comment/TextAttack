@@ -66,6 +66,7 @@ class Transformation(ReprMixin, ABC):
             phrases_indices = set()
             # 提取名词短语和单词
             relevant_text = " ".join(current_text.text[i] for i in indices_to_modify)
+            print(" relevant_text:", relevant_text)
             doc = self.nlp(relevant_text)
             covered_indices = set()
             for chunk in doc.noun_chunks:
