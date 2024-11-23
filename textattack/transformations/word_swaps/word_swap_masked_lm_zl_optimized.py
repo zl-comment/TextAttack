@@ -586,7 +586,7 @@ class WordSwapMaskedLM_zl(WordSwap):
                     print(f"Logits shape: {logits.shape}, Phrase tensor: {phrase_tensor}")
         
                     # 计算困惑度
-                    loss = cross_entropy_loss(logits, phrase_tensor)
+                    loss = cross_entropy_loss(logits, phrase_tensor).float()
                     perplexity = torch.exp(torch.mean(loss)).item()
                     print(f"Perplexity: {perplexity}")
         
