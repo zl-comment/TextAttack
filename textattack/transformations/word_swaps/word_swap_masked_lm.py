@@ -68,7 +68,7 @@ class WordSwapMaskedLM(WordSwap):
         self.min_confidence = min_confidence
         self.batch_size = batch_size
 
-         if isinstance(masked_language_model, str):
+        if isinstance(masked_language_model, str):
             masked_language_model_cache = LocalPathConfig.BERT_BASE_UNCASED
             if os.path.exists(masked_language_model_cache):  # 如果是本地路径
                 print(f"Loading local model from {masked_language_model_cache}")
