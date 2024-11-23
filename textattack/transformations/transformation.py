@@ -97,15 +97,24 @@ class Transformation(ReprMixin, ABC):
             # 重新标记 phrases_indices 中的 token，从 0 开始
             remapped_phrases_indices = set()
             for start, end, phrase_type in phrases_indices:
-                new_start = start - phrases_indices[0][0]
-                new_end = end - phrases_indices[0][0]
+                # 检查短语或单词两边是否有符号
+                if start > 0 and doc[start - 1].pos_ == "PUNCT":
+                    new_start = start - 1 - phrases_indices[0][0]
+                else:
+                    new_start = start - phrases_indices[0][0]
+
+                if end < len(doc) and doc[end].pos_ == "PUNCT":
+                    new_end = end + 1 - phrases_indices[0][0]
+                else:
+                    new_end = end - phrases_indices[0][0]
+
                 remapped_phrases_indices.add((new_start, new_end, phrase_type))
             phrases_indices = sorted(remapped_phrases_indices, key=lambda x: x[0])
 
             # 输出重新标记的短语和单词
             for start, end, phrase_type in phrases_indices:
                 phrase = " ".join([token.text for token in doc[start:end]])
-                print(f"Remapped {phrase_type}: {phrase}")
+                print(f"Remapped {phrase_type}: '{phrase}'")
         else:
             phrases_indices = set(phrases_indices)
             
