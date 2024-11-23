@@ -428,6 +428,7 @@ class AttackedText:
         with multiple space-separated words, representation an insertion
         of one or more words.
         """
+        print("new_words", new_words)
         perturbed_text = ""
         original_text = AttackedText.SPLIT_TOKEN.join(self._text_input.values())
         new_attack_attrs = dict()
