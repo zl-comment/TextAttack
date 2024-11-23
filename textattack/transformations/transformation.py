@@ -84,7 +84,7 @@ class Transformation(ReprMixin, ABC):
 
             # 添加未覆盖的单词
             for token in doc:
-                if token.i not in covered_indices:
+                if token.i not in covered_indices and token.pos_ != "PUNCT":
                     phrases_indices.add((token.i, token.i + 1, "single-word"))
 
             # 按 token 序号排序
