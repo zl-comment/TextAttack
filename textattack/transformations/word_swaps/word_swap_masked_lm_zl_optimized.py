@@ -226,6 +226,7 @@ class WordSwapMaskedLM_zl(WordSwap):
     #         # Need try-except b/c mask-token located past max_length might be truncated by tokenizer
     #         masked_index = current_ids.index(self._lm_tokenizer.mask_token_id)
     #     except ValueError:
+    #         # If mask-token not found, return empty list
     #         return []
     #
     #     # List of indices of tokens that are part of the target word
@@ -364,8 +365,8 @@ class WordSwapMaskedLM_zl(WordSwap):
             # 11. 对组合结果按困惑度排序，以获取前K个结果。
             sorted(combination_results, key=lambda x: x[1])
             top_replacements = [
-                x[0] for x in combination_results[: self.max_candidates]  # 提取前K个替换单词
-            ]
+                x[0] for x in combination_results[: self.max_candidates]
+            ]  # 提取前K个替换单词
             return top_replacements  # 返回替换单词列表
     #对句子的替换
     def _bae_replacement_phrases(self, current_text, start_idx, end_idx):
@@ -590,66 +591,44 @@ class WordSwapMaskedLM_zl(WordSwap):
                 print(f"DEBUG: Handling single-word at index {start_idx}")
                 word_at_index = current_text.words[start_idx]
                 print(f"DEBUG: Word at index {start_idx}: {word_at_index}")
-    
-                current_inputs = self._encode_text(current_text.words[start_idx])
-                print(f"DEBUG: Encoded input for word '{word_at_index}': {current_inputs}")
-    
-                with torch.no_grad():
-                    pred_probs = self._language_model(**current_inputs)[0][0]
-                print(f"DEBUG: Prediction probabilities shape: {pred_probs.shape}")
-    
-                top_probs, top_ids = torch.topk(pred_probs, self.max_candidates)
-                print(f"DEBUG: Top probabilities: {top_probs}, Top IDs: {top_ids}")
-    
-                id_preds = top_ids.cpu()
-                masked_lm_logits = pred_probs.cpu()
-    
-                if self.method == "bert-attack":
-                    print("DEBUG: Using BERT-Attack for replacements.")
+                
+                # 将单词放入句子中
+                sentence = current_text.text.replace(word_at_index, "[MASK]")
+                print(f"DEBUG: Sentence with masked word: {sentence}")
+            else:
+                # 处理短语
+                print(f"DEBUG: Handling phrase from index {start_idx} to {end_idx}")
+                phrase = " ".join(current_text.words[start_idx:end_idx])
+                print(f"DEBUG: Original phrase: {phrase}")
+                
+                # 将短语放入句子中
+                sentence = current_text.text.replace(phrase, "[MASK]")
+                print(f"DEBUG: Sentence with masked phrase: {sentence}")
+            
+            # 编码句子
+            current_inputs = self._encode_text(sentence)
+            print(f"DEBUG: Encoded input for sentence: {current_inputs}")
+
+            with torch.no_grad():
+                pred_probs = self._language_model(**current_inputs)[0][0]
+            print(f"DEBUG: Prediction probabilities shape: {pred_probs.shape}")
+
+            top_probs, top_ids = torch.topk(pred_probs, self.max_candidates)
+            print(f"DEBUG: Top probabilities: {top_probs}, Top IDs: {top_ids}")
+
+            id_preds = top_ids.cpu()
+            masked_lm_logits = pred_probs.cpu()
+
+            if self.method == "bert-attack":
+                print("DEBUG: Using BERT-Attack for replacements.")
+                if (end_idx - start_idx) == 1:
                     replacement_words = self._bert_attack_replacement_words(
                         current_text,
                         start_idx,
                         id_preds=id_preds,
                         masked_lm_logits=masked_lm_logits,
                     )
-                elif self.method == "bae":
-                    print("DEBUG: Using BAE for replacements.")
-                    replacement_words = self._bae_replacement_words(
-                        current_text, [start_idx]
-                    )[0]
-    
-                print(f"DEBUG: Replacement words: {replacement_words}")
-                for r in replacement_words:
-                    r = r.strip("Ġ")
-                    if r != word_at_index:
-                        transformed_text = current_text.replace_word_at_index(start_idx, r)
-                        print(f"DEBUG: Transformed text with replacement '{r}': {transformed_text}")
-                        transformed_texts.append(transformed_text)
-    
-            else:
-                # 处理短语
-                print(f"DEBUG: Handling phrase from index {start_idx} to {end_idx}")
-                phrase = []
-                for i in range(start_idx, end_idx):
-                    phrase.append(current_text.words[i])
-                #得出的是一个正常的短语 也就是单词之间有空格
-                print(f"DEBUG: Original phrase: {' '.join(phrase)}")
-    
-                current_inputs = self._encode_text(" ".join(phrase))
-                print(f"DEBUG: Encoded input for phrase: {current_inputs}")
-    
-                with torch.no_grad():
-                    pred_probs = self._language_model(**current_inputs)[0][0]
-                print(f"DEBUG: Prediction probabilities shape: {pred_probs.shape}")
-    
-                top_probs, top_ids = torch.topk(pred_probs, self.max_candidates)
-                print(f"DEBUG: Top probabilities: {top_probs}, Top IDs: {top_ids}")
-    
-                id_preds = top_ids.cpu()
-                masked_lm_logits = pred_probs.cpu()
-    
-                if self.method == "bert-attack":
-                    print("DEBUG: Using BERT-Attack for phrase replacements.")
+                else:
                     replacement_phrases = self._bert_attack_replacement_phrases(
                         current_text,
                         start_idx,
@@ -657,12 +636,26 @@ class WordSwapMaskedLM_zl(WordSwap):
                         id_preds=id_preds,
                         masked_lm_logits=masked_lm_logits,
                     )
-                elif self.method == "bae":
-                    print("DEBUG: Using BAE for phrase replacements.")
+            elif self.method == "bae":
+                print("DEBUG: Using BAE for replacements.")
+                if (end_idx - start_idx) == 1:
+                    replacement_words = self._bae_replacement_words(
+                        current_text, [start_idx]
+                    )[0]
+                else:
                     replacement_phrases = self._bae_replacement_phrases(
                         current_text, start_idx, end_idx
                     )
-    
+
+            if (end_idx - start_idx) == 1:
+                print(f"DEBUG: Replacement words: {replacement_words}")
+                for r in replacement_words:
+                    r = r.strip("Ġ")
+                    if r != word_at_index:
+                        transformed_text = current_text.replace_word_at_index(start_idx, r)
+                        print(f"DEBUG: Transformed text with replacement '{r}': {transformed_text}")
+                        transformed_texts.append(transformed_text)
+            else:
                 print(f"DEBUG: Replacement phrases: {replacement_phrases}")
                 for replacement_phrase in replacement_phrases:
                     replacement_phrase = replacement_phrase.strip("Ġ")
