@@ -591,7 +591,7 @@ class WordSwapMaskedLM_zl(WordSwap):
                     print(f"Perplexity: {perplexity}")
         
                     # 将 BPE 转换为短语
-                    phrase = "".join(self._lm_tokenizer.convert_ids_to_tokens(phrase_tensor)).replace("##", "")
+                    phrase = "".join(self._lm_tokenizer.convert_ids_to_tokens(phrase_tensor))
                     print(f"Phrase: {phrase}")
         
                     # 检查是否是完整短语
