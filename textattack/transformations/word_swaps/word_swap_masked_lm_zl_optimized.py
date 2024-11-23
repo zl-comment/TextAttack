@@ -539,7 +539,7 @@ class WordSwapMaskedLM_zl(WordSwap):
             top_preds = [id_preds[i] for i in target_ids_pos]  # 获取目标标记位置的预测ID
             print(f"top_preds: {top_preds}")
             # products = itertools.product(*top_preds)  # 计算所有可能的BPE标记组合
-            products = itertools.islice(itertools.product(*top_preds), max_combinations)
+            products = itertools.islice(itertools.product(*top_preds), 40)
             combination_results = []  # 存储组合结果
             # 原始BERT-Attack实现使用交叉熵损失来评估组合的有效性
             cross_entropy_loss = torch.nn.CrossEntropyLoss(reduction="none")
