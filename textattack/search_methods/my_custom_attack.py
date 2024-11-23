@@ -104,47 +104,48 @@ class MyCustomSearchMethod(SearchMethod):
         phrases_indices_to_order, search_over = self._get_index_order(attacked_text)
         i = 0
         cur_result = initial_result
-        results = None
+        print("phrases_indices_to_order:",phrases_indices_to_order)
+        # results = None
         
-        # 按照 phrases_indices_to_order 的顺序进行替换
-        while i < len(phrases_indices_to_order) and not search_over:
-            # 获取在当前索引位置的转换候选项
+        # # 按照 phrases_indices_to_order 的顺序进行替换
+        # while i < len(phrases_indices_to_order) and not search_over:
+        #     # 获取在当前索引位置的转换候选项
             
-            transformed_text_candidates = self.get_transformations_phrases(
-                cur_result.attacked_text,
-                original_text=initial_result.attacked_text,
-                phrases_indices=[phrases_indices_to_order[i]],   #修改的是短语或单词
-                phrase=True,
-            )
-            i += 1
-            if len(transformed_text_candidates) == 0:
-                continue
+        #     transformed_text_candidates = self.get_transformations_phrases(
+        #         cur_result.attacked_text,
+        #         original_text=initial_result.attacked_text,
+        #         phrases_indices=[phrases_indices_to_order[i]],   #修改的是短语或单词
+        #         phrase=True,
+        #     )
+        #     i += 1
+        #     if len(transformed_text_candidates) == 0:
+        #         continue
 
-            results, search_over = self.get_goal_results(transformed_text_candidates)
-            results = sorted(results, key=lambda x: -x.score)
+        #     results, search_over = self.get_goal_results(transformed_text_candidates)
+        #     results = sorted(results, key=lambda x: -x.score)
 
-            # 跳过那些没有改善分数的替换
-            if results[0].score > cur_result.score:
-                cur_result = results[0]
-            else:
-                continue
+        #     # 跳过那些没有改善分数的替换
+        #     if results[0].score > cur_result.score:
+        #         cur_result = results[0]
+        #     else:
+        #         continue
 
-            # 如果成功，返回最佳相似度的索引
-            if cur_result.goal_status == GoalFunctionResultStatus.SUCCEEDED:
-                best_result = cur_result
-                max_similarity = -float("inf")
-                for result in results:
-                    if result.goal_status != GoalFunctionResultStatus.SUCCEEDED:
-                        break
-                    candidate = result.attacked_text
-                    try:
-                        similarity_score = candidate.attack_attrs["similarity_score"]
-                    except KeyError:
-                        break
-                    if similarity_score > max_similarity:
-                        max_similarity = similarity_score
-                        best_result = result
-                return best_result
+        #     # 如果成功，返回最佳相似度的索引
+        #     if cur_result.goal_status == GoalFunctionResultStatus.SUCCEEDED:
+        #         best_result = cur_result
+        #         max_similarity = -float("inf")
+        #         for result in results:
+        #             if result.goal_status != GoalFunctionResultStatus.SUCCEEDED:
+        #                 break
+        #             candidate = result.attacked_text
+        #             try:
+        #                 similarity_score = candidate.attack_attrs["similarity_score"]
+        #             except KeyError:
+        #                 break
+        #             if similarity_score > max_similarity:
+        #                 max_similarity = similarity_score
+        #                 best_result = result
+        #         return best_result
 
         return cur_result
 
