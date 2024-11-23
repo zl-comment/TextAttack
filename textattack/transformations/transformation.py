@@ -65,9 +65,9 @@ class Transformation(ReprMixin, ABC):
             self.nlp = spacy.load("en_core_web_sm")  # Load the spaCy model
             phrases_indices = set()
             # 提取名词短语和单词
-            relevant_text = " ".join(current_text.words[i] for i in indices_to_modify)
-            print(" relevant_text:", relevant_text)
-            doc = self.nlp(relevant_text)
+            # relevant_text = " ".join(current_text.words[i] for i in indices_to_modify)
+            # print(" relevant_text:", relevant_text)
+            doc = self.nlp(current_text)
             covered_indices = set()
             for chunk in doc.noun_chunks:
                 phrases_indices.add((chunk.start, chunk.end, "noun-phrase"))
