@@ -100,9 +100,6 @@ class Transformation(ReprMixin, ABC):
                 # 计算短语或单词左侧的符号数量
                 punct_count_left = sum(1 for i in range(start) if doc[i].pos_ == "PUNCT")
                 new_start = start - punct_count_left
-
-                # 计算短语或单词右侧的符号数量
-                punct_count_right = sum(1 for i in range(end, len(doc)) if doc[i].pos_ == "PUNCT")
                 new_end = end - punct_count_left
 
                 remapped_phrases_indices.add((new_start, new_end, phrase_type))
