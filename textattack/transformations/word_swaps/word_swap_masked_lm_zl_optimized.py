@@ -680,6 +680,7 @@ class WordSwapMaskedLM_zl(WordSwap):
             for replacement in replacement_items:
                 replacement = replacement.strip("Ġ")
                 if replacement != target_text:
+                    print(f"DEBUG: Replacing {'word' if is_single_word else 'phrase'} '{target_text}' with '{replacement}'")
                     transformed_text = current_text.replace_word_at_index(start_idx, replacement) if is_single_word else current_text.replace_phrase_at_index(range(start_idx, end_idx), replacement)
                     print(f"DEBUG: Transformed text with replacement '{replacement}': {transformed_text}")
                     transformed_texts.append(transformed_text)
