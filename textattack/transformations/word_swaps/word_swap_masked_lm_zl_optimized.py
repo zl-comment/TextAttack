@@ -487,14 +487,18 @@ class WordSwapMaskedLM_zl(WordSwap):
             print(f"current_text: {current_text}")
             raise  # 重新抛出异常以便进一步处理或调试
 
+        print(f"masked_text: {masked_text}")
         # 2. 编码掩蔽后的文本以获取输入ID。
         current_inputs = self._encode_text(masked_text.text)
+        print(f"current_inputs: {current_inputs}")
         current_ids = current_inputs["input_ids"].tolist()[0]  # 获取编码后的input_ids
+        print(f"current_ids: {current_ids}")
 
         # 3. 将当前文本中要替换的短语进行编码以获取其BPE标记。
         phrase_tokens = self._lm_tokenizer.encode(
             " ".join(current_text.words[start_idx:end_idx]), add_special_tokens=False
         )
+        print(f"phrase_tokens: {phrase_tokens}")
 
         try:
             # 4. 尝试找到掩蔽标记在输入ID中的索引位置。
@@ -508,6 +512,7 @@ class WordSwapMaskedLM_zl(WordSwap):
         target_ids_pos = list(
             range(masked_index, min(masked_index + len(phrase_tokens), self.max_length))
         )
+        print(f"target_ids_pos: {target_ids_pos}")
 
         # 6. 检查目标标记位置是否存在
         if not len(target_ids_pos):
@@ -516,6 +521,7 @@ class WordSwapMaskedLM_zl(WordSwap):
         elif len(target_ids_pos) == 1:
             # 7. 如果目标短语被标记化为单个标记。
             top_preds = id_preds[target_ids_pos[0]].tolist()  # 获取该位置的前K个预测ID
+            print(f"top_preds: {top_preds}")
             replacement_phrases = []  # 用于存储有效的替换短语
             for id in top_preds:
                 # 将ID转换为短语
@@ -529,7 +535,9 @@ class WordSwapMaskedLM_zl(WordSwap):
         else:
             # 8. 如果目标短语被标记化为多个子词。
             top_preds = [id_preds[i] for i in target_ids_pos]  # 获取目标标记位置的预测ID
+            print(f"top_preds: {top_preds}")
             products = itertools.product(*top_preds)  # 计算所有可能的BPE标记组合
+            print(f"products: {list(products)}")
             combination_results = []  # 存储组合结果
             # 原始BERT-Attack实现使用交叉熵损失来评估组合的有效性
             cross_entropy_loss = torch.nn.CrossEntropyLoss(reduction="none")
@@ -551,12 +559,14 @@ class WordSwapMaskedLM_zl(WordSwap):
                 # 10. 检查组合结果是否是一个完整短语。
                 if utils.is_one_word(phrase):
                     combination_results.append((phrase, perplexity))  # 存储有效组合及其困惑度
+            print(f"combination_results: {combination_results}")
 
             # 11. 对组合结果按困惑度排序，以获取前K个结果。
             sorted(combination_results, key=lambda x: x[1])
             top_replacements = [
                 x[0] for x in combination_results[: self.max_candidates]  # 提取前K个替换短语
             ]
+            print(f"top_replacements: {top_replacements}")
             return top_replacements  # 返回替换短语列表
 
     def _get_transformations_phrases(self, current_text, phrases_indices):
@@ -621,6 +631,7 @@ class WordSwapMaskedLM_zl(WordSwap):
                 phrase = []
                 for i in range(start_idx, end_idx):
                     phrase.append(current_text.words[i])
+                #得出的是一个正常的短语 也就是单词之间有空格
                 print(f"DEBUG: Original phrase: {' '.join(phrase)}")
     
                 current_inputs = self._encode_text(" ".join(phrase))
