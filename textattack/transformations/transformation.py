@@ -71,9 +71,9 @@ class Transformation(ReprMixin, ABC):
             # 创建一个不包含符号的 token 列表
             non_punct_tokens = [token for token in doc if token.pos_ != "PUNCT"]
             covered_indices = set()
-            for chunk in non_punct_tokens.noun_chunks:
-                phrases_indices.add((chunk.start, chunk.end, "noun-phrase"))
-                covered_indices.update(range(chunk.start, chunk.end))
+            for chunk in doc.noun_chunks:
+                    phrases_indices.add((chunk.start, chunk.end, "noun-phrase"))
+                    covered_indices.update(range(chunk.start, chunk.end))
 
             # 提取动词短语和固定表达式
             for token in non_punct_tokens:
