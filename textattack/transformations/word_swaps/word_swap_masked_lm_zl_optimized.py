@@ -551,7 +551,7 @@ class WordSwapMaskedLM_zl(WordSwap):
 
                 # 9. 从masked_lm_logits中选择与目标标记位置对应的logits。
                 logits = torch.index_select(masked_lm_logits, 0, target_ids_pos_tensor)
-                loss = cross_entropy_loss(logits.float(), phrase_tensor)  # Convert to FP32
+                loss = cross_entropy_loss(logits, phrase_tensor)
                 perplexity = torch.exp(torch.mean(loss, dim=0)).item()  # 计算困惑度
                 phrase = "".join(
                     self._lm_tokenizer.convert_ids_to_tokens(phrase_tensor)
@@ -577,35 +577,24 @@ class WordSwapMaskedLM_zl(WordSwap):
         # 将 phrases_indices 转换为列表
         phrases_indices = list(phrases_indices)
         print("DEBUG: phrases_indices:", phrases_indices)
-    
+
         transformed_texts = []
         for start_idx, end_idx, idx_type in phrases_indices:
             print(f"DEBUG: Processing index {start_idx}-{end_idx}, type: {idx_type}")
-    
+
             start_idx = int(start_idx)
             end_idx = int(end_idx)
-    
-            # 使用索引差值判断是单词还是短语
-            if (end_idx - start_idx) == 1:
-                # 处理单词
-                print(f"DEBUG: Handling single-word at index {start_idx}")
-                word_at_index = current_text.words[start_idx]
-                print(f"DEBUG: Word at index {start_idx}: {word_at_index}")
-                
-                # 将单词放入句子中
-                sentence = current_text.text.replace(word_at_index, "[MASK]")
-                print(f"DEBUG: Sentence with masked word: {sentence}")
-            else:
-                # 处理短语
-                print(f"DEBUG: Handling phrase from index {start_idx} to {end_idx}")
-                phrase = " ".join(current_text.words[start_idx:end_idx])
-                print(f"DEBUG: Original phrase: {phrase}")
-                
-                # 将短语放入句子中，替换为多个 [MASK]
-                mask_tokens = " ".join(["[MASK]"] * len(phrase.split()))
-                sentence = current_text.text.replace(phrase, mask_tokens)
-                print(f"DEBUG: Sentence with masked phrase: {sentence}")
-            
+
+            # 判断是单词还是短语
+            is_single_word = (end_idx - start_idx) == 1
+            target_text = current_text.words[start_idx] if is_single_word else " ".join(current_text.words[start_idx:end_idx])
+            print(f"DEBUG: Original {'word' if is_single_word else 'phrase'}: {target_text}")
+
+            # 将目标文本放入句子中，替换为 [MASK]
+            mask_tokens = "[MASK]" if is_single_word else " ".join(["[MASK]"] * len(target_text.split()))
+            sentence = current_text.text.replace(target_text, mask_tokens)
+            print(f"DEBUG: Sentence with masked {'word' if is_single_word else 'phrase'}: {sentence}")
+
             # 编码句子
             current_inputs = self._encode_text(sentence)
             print(f"DEBUG: Encoded input for sentence: {current_inputs}")
@@ -620,52 +609,28 @@ class WordSwapMaskedLM_zl(WordSwap):
             id_preds = top_ids.cpu()
             masked_lm_logits = pred_probs.cpu()
 
+            # 选择替换方法
             if self.method == "bert-attack":
-                print("DEBUG: Using BERT-Attack for replacements.")
-                if (end_idx - start_idx) == 1:
-                    replacement_words = self._bert_attack_replacement_words(
-                        current_text,
-                        start_idx,
-                        id_preds=id_preds,
-                        masked_lm_logits=masked_lm_logits,
-                    )
-                else:
-                    replacement_phrases = self._bert_attack_replacement_phrases(
-                        current_text,
-                        start_idx,
-                        end_idx,
-                        id_preds=id_preds,
-                        masked_lm_logits=masked_lm_logits,
-                    )
+                replacement_items = self._bert_attack_replacement_words(
+                    current_text, start_idx, id_preds=id_preds, masked_lm_logits=masked_lm_logits
+                ) if is_single_word else self._bert_attack_replacement_phrases(
+                    current_text, start_idx, end_idx, id_preds=id_preds, masked_lm_logits=masked_lm_logits
+                )
             elif self.method == "bae":
-                print("DEBUG: Using BAE for replacements.")
-                if (end_idx - start_idx) == 1:
-                    replacement_words = self._bae_replacement_words(
-                        current_text, [start_idx]
-                    )[0]
-                else:
-                    replacement_phrases = self._bae_replacement_phrases(
-                        current_text, start_idx, end_idx
-                    )
+                replacement_items = self._bae_replacement_words(
+                    current_text, [start_idx]
+                )[0] if is_single_word else self._bae_replacement_phrases(
+                    current_text, start_idx, end_idx
+                )
 
-            if (end_idx - start_idx) == 1:
-                print(f"DEBUG: Replacement words: {replacement_words}")
-                for r in replacement_words:
-                    r = r.strip("Ġ")
-                    if r != word_at_index:
-                        transformed_text = current_text.replace_word_at_index(start_idx, r)
-                        print(f"DEBUG: Transformed text with replacement '{r}': {transformed_text}")
-                        transformed_texts.append(transformed_text)
-            else:
-                print(f"DEBUG: Replacement phrases: {replacement_phrases}")
-                for replacement_phrase in replacement_phrases:
-                    replacement_phrase = replacement_phrase.strip("Ġ")
-                    original_phrase = " ".join(current_text.words[start_idx:end_idx])
-                    if replacement_phrase != original_phrase:
-                        transformed_text = current_text.replace_phrase_at_index(range(start_idx, end_idx), replacement_phrase)
-                        print(f"DEBUG: Transformed text with replacement phrase '{replacement_phrase}': {transformed_text}")
-                        transformed_texts.append(transformed_text)
-    
+            print(f"DEBUG: Replacement {'words' if is_single_word else 'phrases'}: {replacement_items}")
+            for replacement in replacement_items:
+                replacement = replacement.strip("Ġ")
+                if replacement != target_text:
+                    transformed_text = current_text.replace_word_at_index(start_idx, replacement) if is_single_word else current_text.replace_phrase_at_index(range(start_idx, end_idx), replacement)
+                    print(f"DEBUG: Transformed text with replacement '{replacement}': {transformed_text}")
+                    transformed_texts.append(transformed_text)
+
         print("DEBUG: All transformed texts:", transformed_texts)
         return transformed_texts
     
