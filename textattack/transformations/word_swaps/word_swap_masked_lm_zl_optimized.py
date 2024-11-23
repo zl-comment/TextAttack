@@ -584,7 +584,8 @@ class WordSwapMaskedLM_zl(WordSwap):
             start_idx = int(start_idx)
             end_idx = int(end_idx)
     
-            if idx_type == 'single-word':
+            # 使用索引差值判断是单词还是短语
+            if (end_idx - start_idx) == 1:
                 # 处理单词
                 print(f"DEBUG: Handling single-word at index {start_idx}")
                 word_at_index = current_text.words[start_idx]
