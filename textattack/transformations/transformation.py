@@ -49,16 +49,10 @@ class Transformation(ReprMixin, ABC):
         else:
             indices_to_modify = set(indices_to_modify)
 
-        if shifted_idxs:
+        if shifted_idxs:#索引是否偏移
             indices_to_modify = set(
                 current_text.convert_from_original_idxs(indices_to_modify)
             )
-        
-
-        for constraint in pre_transformation_constraints:
-            indices_to_modify = indices_to_modify & constraint(current_text, self)
-            # phrases_indices = set(phrases_indices) & constraint(current_text, self)
-
         
         #增加了返回短语 已经是经过筛选的
         if phrases_indices is None:
@@ -105,12 +99,20 @@ class Transformation(ReprMixin, ABC):
                 remapped_phrases_indices.add((new_start, new_end, phrase_type))
             phrases_indices = sorted(remapped_phrases_indices, key=lambda x: x[0])
 
-            # 输出重新标记的短语和单词
-            for start, end, phrase_type in phrases_indices:
-                phrase = " ".join([token.text for token in doc[start:end]])
-                print(f"Remapped {phrase_type}: {phrase}")
+          
         else:
+            #得到的是短语或单词在句子中的位置，按只计算单词来执行
             phrases_indices = set(phrases_indices)
+
+
+        for constraint in pre_transformation_constraints:
+            indices_to_modify = indices_to_modify & constraint(current_text, self)
+            print(constraint)
+            print(type(constraint))
+            phrases_indices = set(phrases_indices) & constraint(current_text, self)
+
+        
+        
             
         if return_indices:
             return indices_to_modify
