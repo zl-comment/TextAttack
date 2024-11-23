@@ -116,6 +116,9 @@ class Transformation(ReprMixin, ABC):
             
             # 根据不可修改的起始索引过滤 phrases_indices
             phrases_indices = {phrase for phrase in phrases_indices if phrase[0] not in unmodifiable_indices}
+            
+            # 对过滤后的 phrases_indices 进行排序
+            phrases_indices = sorted(phrases_indices, key=lambda x: x[0])
 
         
         
