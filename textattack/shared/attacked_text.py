@@ -567,6 +567,7 @@ class AttackedText:
                 f"Cannot replace {len(new_phrases)} phrases at {len(indices)} indices."
             )
         words = self.words[:]
+        print("words", words)
         print(words)
         for i, new_phrase in zip(indices, new_phrases):
             if not isinstance(new_phrase, str):
