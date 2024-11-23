@@ -622,6 +622,7 @@ class WordSwapMaskedLM_zl(WordSwap):
 
             id_preds = top_ids.cpu()
             masked_lm_logits = pred_probs.cpu()
+            print(f"DEBUG: ID predictions: {id_preds}, Masked LM logits: {masked_lm_logits}")
 
             # 选择替换方法
             if self.method == "bert-attack":
