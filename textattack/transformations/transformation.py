@@ -89,6 +89,11 @@ class Transformation(ReprMixin, ABC):
 
             # 按 token 序号排序
             phrases_indices = sorted(phrases_indices, key=lambda x: x[0])
+            
+            # 输出提取的短语和单词
+            for start, end, phrase_type in phrases_indices:
+                phrase = " ".join([token.text for token in doc[start:end]])
+                print(f"Extracted {phrase_type}: '{phrase}'")
         else:
             phrases_indices = set(phrases_indices)
             
