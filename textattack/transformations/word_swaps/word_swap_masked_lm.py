@@ -12,7 +12,6 @@ from transformers import AutoModelForMaskedLM, AutoTokenizer
 from textattack.shared import utils
 
 from .word_swap import WordSwap
-import os
 from textattack import LocalPathConfig
 
 class WordSwapMaskedLM(WordSwap):
@@ -68,8 +67,8 @@ class WordSwapMaskedLM(WordSwap):
         self.max_candidates = max_candidates
         self.min_confidence = min_confidence
         self.batch_size = batch_size
-        #加载预训练的模型的tokenizer和model
-        if isinstance(masked_language_model, str):
+
+         if isinstance(masked_language_model, str):
             masked_language_model_cache = LocalPathConfig.BERT_BASE_UNCASED
             if os.path.exists(masked_language_model_cache):  # 如果是本地路径
                 print(f"Loading local model from {masked_language_model_cache}")
@@ -107,14 +106,14 @@ class WordSwapMaskedLM(WordSwap):
         return encoding.to(utils.device)
 
     def _bae_replacement_words(self, current_text, indices_to_modify):
-        """使用 BAE 方法获取要替换的单词的替换词。
+        """Get replacement words for the word we want to replace using BAE
+        method.
 
-        参数:
-            current_text (AttackedText): 我们要取替换词的文本。
-            indices_to_modify (list): 我们要替换的单词的索引列表。
+        Args:
+            current_text (AttackedText): Text we want to get replacements for.
+            index (int): index of word we want to replace
         """
         masked_texts = []
-        # 为每个要修改的索引创建掩码版本的文本
         for index in indices_to_modify:
             masked_text = current_text.replace_word_at_index(
                 index, self._lm_tokenizer.mask_token
@@ -122,26 +121,22 @@ class WordSwapMaskedLM(WordSwap):
             masked_texts.append(masked_text.text)
 
         i = 0
-        # 2D 列表，其中每个要修改的索引都有一个替换词列表
+        # 2-D list where for each index to modify we have a list of replacement words
         replacement_words = []
         while i < len(masked_texts):
-            # 批量编码掩码文本
-            inputs = self._encode_text(masked_texts[i: i + self.batch_size])
+            inputs = self._encode_text(masked_texts[i : i + self.batch_size])
             ids = inputs["input_ids"].tolist()
             with torch.no_grad():
-                # 从语言模型获取预测
                 preds = self._language_model(**inputs)[0]
 
             for j in range(len(ids)):
                 try:
-                    # 找到掩码标记的索引
+                    # Need try-except b/c mask-token located past max_length might be truncated by tokenizer
                     masked_index = ids[j].index(self._lm_tokenizer.mask_token_id)
                 except ValueError:
-                    # 如果未找到掩码标记，则附加一个空列表
                     replacement_words.append([])
                     continue
 
-                # 获取掩码标记的 logits 和概率
                 mask_token_logits = preds[j, masked_index]
                 mask_token_probs = torch.softmax(mask_token_logits, dim=0)
                 ranked_indices = torch.argsort(mask_token_probs, descending=True)
@@ -149,27 +144,24 @@ class WordSwapMaskedLM(WordSwap):
                 for _id in ranked_indices:
                     _id = _id.item()
                     word = self._lm_tokenizer.convert_ids_to_tokens(_id)
-                    # 检查单词是否为子句，并在必要时去除 BPE 伪影
                     if utils.check_if_subword(
-                            word,
-                            self._language_model.config.model_type,
-                            (masked_index == 1),
+                        word,
+                        self._language_model.config.model_type,
+                        (masked_index == 1),
                     ):
                         word = utils.strip_BPE_artifacts(
                             word, self._language_model.config.model_type
                         )
-                    # 检查单词是否符合替换条件
                     if (
-                            mask_token_probs[_id] >= self.min_confidence
-                            and utils.is_one_word(word)
-                            and not utils.check_if_punctuations(word)
+                        mask_token_probs[_id] >= self.min_confidence
+                        and utils.is_one_word(word)
+                        and not utils.check_if_punctuations(word)
                     ):
                         top_words.append(word)
 
-                    # 如果我们有足够的候选词或概率太低，则停止
                     if (
-                            len(top_words) >= self.max_candidates
-                            or mask_token_probs[_id] < self.min_confidence
+                        len(top_words) >= self.max_candidates
+                        or mask_token_probs[_id] < self.min_confidence
                     ):
                         break
 
@@ -179,204 +171,100 @@ class WordSwapMaskedLM(WordSwap):
 
         return replacement_words
 
-    # def _bert_attack_replacement_words(
-    #     self,
-    #     current_text,
-    #     index,
-    #     id_preds,
-    #     masked_lm_logits,
-    # ):
-    #     """Get replacement words for the word we want to replace using BERT-
-    #     Attack method.
-    #
-    #     Args:
-    #         current_text (AttackedText): Text we want to get replacements for.
-    #         index (int): index of word we want to replace
-    #         id_preds (torch.Tensor): N x K tensor of top-K ids for each token-position predicted by the masked language model.
-    #             N is equivalent to `self.max_length`.
-    #         masked_lm_logits (torch.Tensor): N x V tensor of the raw logits outputted by the masked language model.
-    #             N is equivlaent to `self.max_length` and V is dictionary size of masked language model.
-    #     """
-    #     # We need to find which BPE tokens belong to the word we want to replace
-    #     masked_text = current_text.replace_word_at_index(
-    #         index, self._lm_tokenizer.mask_token
-    #     )
-    #     current_inputs = self._encode_text(masked_text.text)
-    #     current_ids = current_inputs["input_ids"].tolist()[0]
-    #     word_tokens = self._lm_tokenizer.encode(
-    #         current_text.words[index], add_special_tokens=False
-    #     )
-    #
-    #     try:
-    #         # Need try-except b/c mask-token located past max_length might be truncated by tokenizer
-    #         masked_index = current_ids.index(self._lm_tokenizer.mask_token_id)
-    #     except ValueError:
-    #         return []
-    #
-    #     # List of indices of tokens that are part of the target word
-    #     target_ids_pos = list(
-    #         range(masked_index, min(masked_index + len(word_tokens), self.max_length))
-    #     )
-    #
-    #     if not len(target_ids_pos):
-    #         return []
-    #     elif len(target_ids_pos) == 1:
-    #         # Word to replace is tokenized as a single word
-    #         top_preds = id_preds[target_ids_pos[0]].tolist()
-    #         replacement_words = []
-    #         for id in top_preds:
-    #             token = self._lm_tokenizer.convert_ids_to_tokens(id)
-    #             if utils.is_one_word(token) and not utils.check_if_subword(
-    #                 token, self._language_model.config.model_type, index == 0
-    #             ):
-    #                 replacement_words.append(token)
-    #         return replacement_words
-    #     else:
-    #         # Word to replace is tokenized as multiple sub-words
-    #         top_preds = [id_preds[i] for i in target_ids_pos]
-    #         products = itertools.product(*top_preds)
-    #         combination_results = []
-    #         # Original BERT-Attack implement uses cross-entropy loss
-    #         cross_entropy_loss = torch.nn.CrossEntropyLoss(reduction="none")
-    #         target_ids_pos_tensor = torch.tensor(target_ids_pos)
-    #         word_tensor = torch.zeros(len(target_ids_pos), dtype=torch.long)
-    #         for bpe_tokens in products:
-    #             for i in range(len(bpe_tokens)):
-    #                 word_tensor[i] = bpe_tokens[i]
-    #
-    #             logits = torch.index_select(masked_lm_logits, 0, target_ids_pos_tensor)
-    #             loss = cross_entropy_loss(logits, word_tensor)
-    #             perplexity = torch.exp(torch.mean(loss, dim=0)).item()
-    #             word = "".join(
-    #                 self._lm_tokenizer.convert_ids_to_tokens(word_tensor)
-    #             ).replace("##", "")
-    #             if utils.is_one_word(word):
-    #                 combination_results.append((word, perplexity))
-    #         # Sort to get top-K results
-    #         sorted(combination_results, key=lambda x: x[1])
-    #         top_replacements = [
-    #             x[0] for x in combination_results[: self.max_candidates]
-    #         ]
-    #         return top_replacements
     def _bert_attack_replacement_words(
-            self,
-            current_text,
-            index,
-            id_preds,
-            masked_lm_logits,
+        self,
+        current_text,
+        index,
+        id_preds,
+        masked_lm_logits,
     ):
-        """使用BERT-Attack方法获取要替换的单词的替换词。
+        """Get replacement words for the word we want to replace using BERT-
+        Attack method.
 
-        参数:
-            current_text (AttackedText): 我们希望获取替换词的文本，包含被攻击的单词和上下文。
-            index (int): 要替换的单词在当前文本中的索引位置。
-            id_preds (torch.Tensor): 一个N x K的张量，包含由掩蔽语言模型预测的每个标记位置的前K个id。
-                N表示文本的最大长度，即`self.max_length`，K表示每个位置的候选单词数量。
-            masked_lm_logits (torch.Tensor): 一个N x V的张量，包含掩蔽语言模型输出的原始logits。
-                N表示文本的最大长度，V是掩蔽语言模型的词典大小，logits用于计算替换单词的可能性。
+        Args:
+            current_text (AttackedText): Text we want to get replacements for.
+            index (int): index of word we want to replace
+            id_preds (torch.Tensor): N x K tensor of top-K ids for each token-position predicted by the masked language model.
+                N is equivalent to `self.max_length`.
+            masked_lm_logits (torch.Tensor): N x V tensor of the raw logits outputted by the masked language model.
+                N is equivlaent to `self.max_length` and V is dictionary size of masked language model.
         """
-        # 1. 找到需要替换的单词在当前文本中的BPE标记。
-        # 将要替换的单词替换为掩蔽标记（mask token）。
+        # We need to find which BPE tokens belong to the word we want to replace
         masked_text = current_text.replace_word_at_index(
             index, self._lm_tokenizer.mask_token
         )
-
-        # 2. 编码掩蔽后的文本以获取输入ID。
         current_inputs = self._encode_text(masked_text.text)
-        current_ids = current_inputs["input_ids"].tolist()[0]  # 获取编码后的input_ids
-
-        # 3. 将当前文本中要替换的单词进行编码以获取其BPE标记。
+        current_ids = current_inputs["input_ids"].tolist()[0]
         word_tokens = self._lm_tokenizer.encode(
             current_text.words[index], add_special_tokens=False
         )
 
         try:
-            # 4. 尝试找到掩蔽标记在输入ID中的索引位置。
-            # 如果掩蔽标记位于最大长度之外，则可能会导致截断，因此使用try-except处理。
+            # Need try-except b/c mask-token located past max_length might be truncated by tokenizer
             masked_index = current_ids.index(self._lm_tokenizer.mask_token_id)
         except ValueError:
-            # 如果没有找到掩蔽标记，返回空列表表示没有可替换的单词。
             return []
 
-        # 5. 创建目标单词的标记索引列表，计算该单词在编码文本中的位置。
+        # List of indices of tokens that are part of the target word
         target_ids_pos = list(
             range(masked_index, min(masked_index + len(word_tokens), self.max_length))
         )
 
-        # 6. 检查目标标记位置是否存在
         if not len(target_ids_pos):
-            # 如果没有找到目标标记位置，返回空列表。
             return []
         elif len(target_ids_pos) == 1:
-            # 7. 如果目标单词被标记化为单个标记。
-            top_preds = id_preds[target_ids_pos[0]].tolist()  # 获取该位置的前K个预测ID
-            replacement_words = []  # 用于存储有效的替换单词
+            # Word to replace is tokenized as a single word
+            top_preds = id_preds[target_ids_pos[0]].tolist()
+            replacement_words = []
             for id in top_preds:
-                # 将ID转换为单词
                 token = self._lm_tokenizer.convert_ids_to_tokens(id)
-                # 检查该单词是否是一个完整的单词，并且不是子词
                 if utils.is_one_word(token) and not utils.check_if_subword(
-                        token, self._language_model.config.model_type, index == 0
+                    token, self._language_model.config.model_type, index == 0
                 ):
-                    replacement_words.append(token)  # 将有效的替换单词加入列表
+                    replacement_words.append(token)
             return replacement_words
         else:
-            # 8. 如果目标单词被标记化为多个子词。
-            top_preds = [id_preds[i] for i in target_ids_pos]  # 获取目标标记位置的预测ID
-            products = itertools.product(*top_preds)  # 计算所有可能的BPE标记组合
-            combination_results = []  # 存储组合结果
-            # 原始BERT-Attack实现使用交叉熵损失来评估组合的有效性
+            # Word to replace is tokenized as multiple sub-words
+            top_preds = [id_preds[i] for i in target_ids_pos]
+            products = itertools.product(*top_preds)
+            combination_results = []
+            # Original BERT-Attack implement uses cross-entropy loss
             cross_entropy_loss = torch.nn.CrossEntropyLoss(reduction="none")
-            target_ids_pos_tensor = torch.tensor(target_ids_pos)  # 转换为张量
-            word_tensor = torch.zeros(len(target_ids_pos), dtype=torch.long)  # 用于存储BPE标记的张量
-
+            target_ids_pos_tensor = torch.tensor(target_ids_pos)
+            word_tensor = torch.zeros(len(target_ids_pos), dtype=torch.long)
             for bpe_tokens in products:
                 for i in range(len(bpe_tokens)):
-                    word_tensor[i] = bpe_tokens[i]  # 将当前BPE标记存入word_tensor
+                    word_tensor[i] = bpe_tokens[i]
 
-                # 9. 从masked_lm_logits中选择与目标标记位置对应的logits。
                 logits = torch.index_select(masked_lm_logits, 0, target_ids_pos_tensor)
-                loss = cross_entropy_loss(logits, word_tensor)  # 计算损失
-                perplexity = torch.exp(torch.mean(loss, dim=0)).item()  # 计算困惑度
+                loss = cross_entropy_loss(logits, word_tensor)
+                perplexity = torch.exp(torch.mean(loss, dim=0)).item()
                 word = "".join(
                     self._lm_tokenizer.convert_ids_to_tokens(word_tensor)
-                ).replace("##", "")  # 将BPE标记转换为单词，并去除子词标记符号
-
-                # 10. 检查组合结果是否是一个完整单词。
+                ).replace("##", "")
                 if utils.is_one_word(word):
-                    combination_results.append((word, perplexity))  # 存储有效组合及其困惑度
-
-            # 11. 对组合结果按困惑度排序，以获取前K个结果。
+                    combination_results.append((word, perplexity))
+            # Sort to get top-K results
             sorted(combination_results, key=lambda x: x[1])
             top_replacements = [
-                x[0] for x in combination_results[: self.max_candidates]  # 提取前K个替换单词
+                x[0] for x in combination_results[: self.max_candidates]
             ]
-            return top_replacements  # 返回替换单词列表
+            return top_replacements
 
     def _get_transformations(self, current_text, indices_to_modify):
-        print("indices_to_modify:", indices_to_modify)
         indices_to_modify = list(indices_to_modify)
-        print("list_indices_to_modify:", indices_to_modify)
         if self.method == "bert-attack":
-            # 编码当前文本
             current_inputs = self._encode_text(current_text.text)
-
-            # 禁用梯度计算，进行前向传播
             with torch.no_grad():
                 pred_probs = self._language_model(**current_inputs)[0][0]
-
-            # 获取每个位置的前max_candidates个预测词汇及其概率
             top_probs, top_ids = torch.topk(pred_probs, self.max_candidates)
             id_preds = top_ids.cpu()
             masked_lm_logits = pred_probs.cpu()
 
             transformed_texts = []
 
-            # 对于每个需要修改的索引
             for i in indices_to_modify:
                 word_at_index = current_text.words[i]
-
-                # 获取替换词
                 replacement_words = self._bert_attack_replacement_words(
                     current_text,
                     i,
@@ -384,7 +272,6 @@ class WordSwapMaskedLM(WordSwap):
                     masked_lm_logits=masked_lm_logits,
                 )
 
-                # 将替换词应用到原文本中
                 for r in replacement_words:
                     r = r.strip("Ġ")
                     if r != word_at_index:
@@ -392,58 +279,29 @@ class WordSwapMaskedLM(WordSwap):
                             current_text.replace_word_at_index(i, r)
                         )
 
-            # 返回变换后的文本
             return transformed_texts
 
-
-        # 如果方法是 "bae"
-
         elif self.method == "bae":
-
-            # 获取替换词
-
             replacement_words = self._bae_replacement_words(
                 current_text, indices_to_modify
             )
-
             transformed_texts = []
-
-            # 遍历每个替换词
-
             for i in range(len(replacement_words)):
                 index_to_modify = indices_to_modify[i]
                 word_at_index = current_text.words[index_to_modify]
-
-                # 遍历每个替换词的候选词
-
                 for word in replacement_words[i]:
                     word = word.strip("Ġ")
-                    # 检查替换词是否符合条件
                     if (
-                            word != word_at_index
-                            and re.search("[a-zA-Z]", word)
-                            and len(utils.words_from_text(word)) == 1
+                        word != word_at_index
+                        and re.search("[a-zA-Z]", word)
+                        and len(utils.words_from_text(word)) == 1
                     ):
-                        # 将替换词应用到原文本中
                         transformed_texts.append(
                             current_text.replace_word_at_index(index_to_modify, word)
                         )
-            # 返回变换后的文本
             return transformed_texts
         else:
-            # 如果方法未被识别，抛出异常
             raise ValueError(f"Unrecognized value {self.method} for `self.method`.")
-    #实现父类抽象类
-    def _get_transformations_phrases(self, current_text, phrases_indices):
-        """Returns a list of all possible transformations for ``current_text``,
-        only modifying ``indices_to_modify``. Must be overridden by specific
-        transformations.
-
-        Args:
-            current_text: The ``AttackedText`` to transform.
-            indicies_to_modify: Which word indices can be modified.
-        """
-        raise NotImplementedError()
 
     def extra_repr_keys(self):
         return [
