@@ -105,7 +105,7 @@ class Transformation(ReprMixin, ABC):
             # 输出重新标记的短语和单词
             for start, end, phrase_type in phrases_indices:
                 phrase = " ".join([token.text for token in doc[start:end]])
-                print(f"Remapped {phrase_type}: '{phrase}'")
+                print(f"Remapped {phrase_type}: {phrase}")
         else:
             phrases_indices = set(phrases_indices)
             
