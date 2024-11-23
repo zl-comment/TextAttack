@@ -582,11 +582,11 @@ class WordSwapMaskedLM_zl(WordSwap):
         
                     # 提取 [MASK] 对应的 logits
                     mask_positions = target_ids_pos_tensor  # 假设 target_ids_pos_tensor 已经正确匹配 `[MASK]` 的位置
-                    logits = torch.index_select(masked_lm_logits, 0, mask_positions)
+                    logits = torch.index_select(masked_lm_logits, 0, mask_positions).float()
                     print(f"Logits shape: {logits.shape}, Phrase tensor: {phrase_tensor}")
         
                     # 计算困惑度
-                    loss = cross_entropy_loss(logits, phrase_tensor).float()
+                    loss = cross_entropy_loss(logits, phrase_tensor)
                     perplexity = torch.exp(torch.mean(loss)).item()
                     print(f"Perplexity: {perplexity}")
         
