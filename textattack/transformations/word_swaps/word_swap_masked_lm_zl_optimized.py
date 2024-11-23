@@ -538,8 +538,8 @@ class WordSwapMaskedLM_zl(WordSwap):
             # 8. 如果目标短语被标记化为多个子词。
             top_preds = [id_preds[i] for i in target_ids_pos]  # 获取目标标记位置的预测ID
             print(f"top_preds: {top_preds}")
-            products = itertools.product(*top_preds)  # 计算所有可能的BPE标记组合
-            
+            # products = itertools.product(*top_preds)  # 计算所有可能的BPE标记组合
+            products = itertools.islice(itertools.product(*top_preds), max_combinations)
             combination_results = []  # 存储组合结果
             # 原始BERT-Attack实现使用交叉熵损失来评估组合的有效性
             cross_entropy_loss = torch.nn.CrossEntropyLoss(reduction="none")
@@ -569,35 +569,35 @@ class WordSwapMaskedLM_zl(WordSwap):
             for batch in self.batched_iterator(products, batch_size):
                 print(f"Batch tokens: {batch}")
     
-                # for bpe_token in batch:
-                #     print(f"bpe_token: {bpe_token}")
+                for bpe_token in batch:
+                    print(f"bpe_token: {bpe_token}")
         
-                #     # 初始化 phrase_tensor，大小为当前短语的长度
-                #     phrase_tensor = torch.zeros(len(bpe_token), dtype=torch.long)
+                    # 初始化 phrase_tensor，大小为当前短语的长度
+                    phrase_tensor = torch.zeros(len(bpe_token), dtype=torch.long)
         
-                #     # 填充 phrase_tensor
-                #     for i in range(len(bpe_token)):
-                #         phrase_tensor[i] = bpe_token[i]
-                #         print(f"phrase_tensor[{i}]: {phrase_tensor[i]}")
+                    # 填充 phrase_tensor
+                    for i in range(len(bpe_token)):
+                        phrase_tensor[i] = bpe_token[i]
+                        print(f"phrase_tensor[{i}]: {phrase_tensor[i]}")
         
-                #     # 提取 [MASK] 对应的 logits
-                #     mask_positions = target_ids_pos_tensor  # 假设 target_ids_pos_tensor 已经正确匹配 `[MASK]` 的位置
-                #     logits = torch.index_select(masked_lm_logits, 0, mask_positions)
-                #     print(f"Logits shape: {logits.shape}, Phrase tensor: {phrase_tensor}")
+                    # 提取 [MASK] 对应的 logits
+                    mask_positions = target_ids_pos_tensor  # 假设 target_ids_pos_tensor 已经正确匹配 `[MASK]` 的位置
+                    logits = torch.index_select(masked_lm_logits, 0, mask_positions)
+                    print(f"Logits shape: {logits.shape}, Phrase tensor: {phrase_tensor}")
         
-                #     # 计算困惑度
-                #     loss = cross_entropy_loss(logits, phrase_tensor)
-                #     perplexity = torch.exp(torch.mean(loss)).item()
-                #     print(f"Perplexity: {perplexity}")
+                    # 计算困惑度
+                    loss = cross_entropy_loss(logits, phrase_tensor)
+                    perplexity = torch.exp(torch.mean(loss)).item()
+                    print(f"Perplexity: {perplexity}")
         
-                #     # 将 BPE 转换为短语
-                #     phrase = "".join(self._lm_tokenizer.convert_ids_to_tokens(phrase_tensor)).replace("##", "")
-                #     print(f"Phrase: {phrase}")
+                    # 将 BPE 转换为短语
+                    phrase = "".join(self._lm_tokenizer.convert_ids_to_tokens(phrase_tensor)).replace("##", "")
+                    print(f"Phrase: {phrase}")
         
-                #     # 检查是否是完整短语
-                #     if utils.is_one_word(phrase):
-                #         combination_results.append((phrase, perplexity))
-                #         print(f"Valid phrase: {phrase}, perplexity: {perplexity}")                        
+                    # 检查是否是完整短语
+                    if utils.is_one_word(phrase):
+                        combination_results.append((phrase, perplexity))
+                        print(f"Valid phrase: {phrase}, perplexity: {perplexity}")                        
 
             print(f"combination_results: {combination_results}")
 
