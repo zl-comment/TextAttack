@@ -75,11 +75,17 @@ class Transformation(ReprMixin, ABC):
 
             # 提取名词短语
             for chunk in doc.noun_chunks:
-                # 使用重新分配的索引
-                start = [new_idx for token, new_idx in non_punct_tokens_with_new_indices if token.i == chunk.start][0]
-                end = [new_idx for token, new_idx in non_punct_tokens_with_new_indices if token.i == chunk.end - 1][0] + 1
-                phrases_indices.add((start, end, "noun-phrase"))
-                covered_indices.update(range(start, end))
+                # 获取新索引范围，确保符号被排除
+                filtered_tokens = [
+                    (token, new_idx)
+                    for token, new_idx in non_punct_tokens_with_new_indices
+                    if chunk.start <= token.i < chunk.end
+                ]
+                if filtered_tokens:
+                    start = filtered_tokens[0][1]  # 新索引起点
+                    end = filtered_tokens[-1][1] + 1  # 新索引终点
+                    phrases_indices.add((start, end, "noun-phrase"))
+                    covered_indices.update(range(start, end))
 
             # 提取动词短语和固定表达式
             for token, new_index in non_punct_tokens_with_new_indices:
@@ -92,7 +98,7 @@ class Transformation(ReprMixin, ABC):
 
             # 添加未覆盖的单词
             for token, new_index in non_punct_tokens_with_new_indices:
-                if new_index not in covered_indices and token.pos_ != "PUNCT":
+                if new_index not in covered_indices:
                     phrases_indices.add((new_index, new_index + 1, "single-word"))
 
             # 按 token 序号排序
