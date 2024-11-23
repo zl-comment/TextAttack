@@ -104,7 +104,7 @@ class Transformation(ReprMixin, ABC):
                     new_start = start 
 
                 if end < len(doc) and doc[end].pos_ == "PUNCT":
-                    new_end = end - 1 ]
+                    new_end = end - 1 
                 else:
                     new_end = end 
 
