@@ -577,7 +577,7 @@ class WordSwapMaskedLM_zl(WordSwap):
             print(f"top_replacements: {top_replacements}")
             return top_replacements  # 返回替换短语列表
     #增加批次处理函数
-    def batched_iterator(iterable, batch_size):
+    def batched_iterator(self,iterable, batch_size):
         iterator = iter(iterable)
         while True:
             batch = list(itertools.islice(iterator, batch_size))
