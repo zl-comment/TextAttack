@@ -546,11 +546,13 @@ class WordSwapMaskedLM_zl(WordSwap):
             target_ids_pos_tensor = torch.tensor(target_ids_pos)  # 转换为张量
             phrase_tensor = torch.zeros(len(target_ids_pos), dtype=torch.long)  # 用于存储BPE标记的张量
 
-            for bpe_tokens in range(0, len(products), batch_size):
-                print(f"bpe_tokens: {bpe_tokens}")
-                for i in range(len(bpe_tokens)):
-                    phrase_tensor[i] = bpe_tokens[i]  # 将当前BPE标记存入phrase_tensor
-                    print(f"phrase_tensor: {phrase_tensor}")
+            for batch in batched_iterator(products, batch_size):
+                print(f"Batch tokens: {batch}")
+                for bpe_token in batch:
+                    print(f"bpe_token: {bpe_token}")
+                    for i in range(len(bpe_token)):
+                        phrase_tensor[i] = bpe_token[i]  # 将当前BPE标记存入phrase_tensor
+                        print(f"phrase_tensor: {phrase_tensor}")
 
                 # 9. 从masked_lm_logits中选择与目标标记位置对应的logits。
                 logits = torch.index_select(masked_lm_logits, 0, target_ids_pos_tensor)
@@ -573,7 +575,14 @@ class WordSwapMaskedLM_zl(WordSwap):
             ]
             print(f"top_replacements: {top_replacements}")
             return top_replacements  # 返回替换短语列表
-
+    #增加批次处理函数
+    def batched_iterator(iterable, batch_size):
+    iterator = iter(iterable)
+    while True:
+        batch = list(itertools.islice(iterator, batch_size))
+        if not batch:
+            break
+        yield batch
     def _get_transformations_phrases(self, current_text, phrases_indices):
         """
         解析 phrases_indices
