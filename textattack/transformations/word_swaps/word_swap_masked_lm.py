@@ -5,7 +5,7 @@ Word Swap by BERT-Masked LM.
 
 import itertools
 import re
-
+import os
 import torch
 from transformers import AutoModelForMaskedLM, AutoTokenizer
 
@@ -322,7 +322,7 @@ class WordSwapMaskedLM(WordSwap):
             indicies_to_modify: Which word indices can be modified.
         """
         raise NotImplementedError()
-        
+
 def recover_word_case(word, reference_word):
     """Makes the case of `word` like the case of `reference_word`.
 
