@@ -596,8 +596,8 @@ class WordSwapMaskedLM_zl(WordSwap):
                     print(f"Tokens: {tokens}")
 
                     # 按照子词标记拼接，保留空格和分词符号
-                    cleaned_phrase = " ".join(token.replace("##", "") for token in tokens)
-                    print(f"Cleaned Phrase: {cleaned_phrase}")
+                    phrase = " ".join(token.replace("##", "") for token in tokens)
+                    print(f"Cleaned Phrase: {phrase}")
 
         
                     # 检查是否是完整短语
