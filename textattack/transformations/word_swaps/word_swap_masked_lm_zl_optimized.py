@@ -590,9 +590,15 @@ class WordSwapMaskedLM_zl(WordSwap):
                     perplexity = torch.exp(torch.mean(loss)).item()
                     print(f"Perplexity: {perplexity}")
         
-                    # 将 BPE 转换为短语
-                    phrase = "".join(self._lm_tokenizer.convert_ids_to_tokens(phrase_tensor))
-                    print(f"Phrase: {phrase}")
+                  
+                    # 获取子词
+                    tokens = self._lm_tokenizer.convert_ids_to_tokens(phrase_tensor)
+                    print(f"Tokens: {tokens}")
+
+                    # 按照子词标记拼接，保留空格和分词符号
+                    cleaned_phrase = " ".join(token.replace("##", "") for token in tokens)
+                    print(f"Cleaned Phrase: {cleaned_phrase}")
+
         
                     # 检查是否是完整短语
                     if utils.is_one_word(phrase):
