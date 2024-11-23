@@ -601,8 +601,9 @@ class WordSwapMaskedLM_zl(WordSwap):
                 phrase = " ".join(current_text.words[start_idx:end_idx])
                 print(f"DEBUG: Original phrase: {phrase}")
                 
-                # 将短语放入句子中
-                sentence = current_text.text.replace(phrase, "[MASK]")
+                # 将短语放入句子中，替换为多个 [MASK]
+                mask_tokens = " ".join(["[MASK]"] * len(phrase.split()))
+                sentence = current_text.text.replace(phrase, mask_tokens)
                 print(f"DEBUG: Sentence with masked phrase: {sentence}")
             
             # 编码句子
