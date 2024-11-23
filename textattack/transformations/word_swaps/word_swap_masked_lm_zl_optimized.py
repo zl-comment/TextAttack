@@ -557,7 +557,7 @@ class WordSwapMaskedLM_zl(WordSwap):
                 phrase = "".join(
                     self._lm_tokenizer.convert_ids_to_tokens(phrase_tensor)
                 ).replace("##", "")  # 将BPE标记转换为短语，并去除子词标记符号
-
+                print(f"phrase: {phrase}, perplexity: {perplexity}")
                 # 10. 检查组合结果是否是一个完整短语。
                 if utils.is_one_word(phrase):
                     combination_results.append((phrase, perplexity))  # 存储有效组合及其困惑度
