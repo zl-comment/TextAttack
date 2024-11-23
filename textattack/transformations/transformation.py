@@ -87,7 +87,9 @@ class Transformation(ReprMixin, ABC):
             # 添加未覆盖的单词
             for token, original_index in non_punct_tokens_with_indices:
                 if original_index not in covered_indices:
-                    phrases_indices.add((original_index, original_index + 1, "single-word"))
+                    # 检查该单词是否在任何现有短语范围内
+                    if not any(start <= original_index < end for start, end, _ in phrases_indices):
+                        phrases_indices.add((original_index, original_index + 1, "single-word"))
 
             # 按 token 序号排序
             phrases_indices = sorted(phrases_indices, key=lambda x: x[0])
