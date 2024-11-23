@@ -312,7 +312,17 @@ class WordSwapMaskedLM(WordSwap):
             "min_confidence",
         ]
 
+    def _get_transformations_phrases(self, current_text, phrases_indices):
+        """Returns a list of all possible transformations for ``current_text``,
+        only modifying ``indices_to_modify``. Must be overridden by specific
+        transformations.
 
+        Args:
+            current_text: The ``AttackedText`` to transform.
+            indicies_to_modify: Which word indices can be modified.
+        """
+        raise NotImplementedError()
+        
 def recover_word_case(word, reference_word):
     """Makes the case of `word` like the case of `reference_word`.
 
