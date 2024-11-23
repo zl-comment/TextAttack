@@ -545,7 +545,8 @@ class WordSwapMaskedLM_zl(WordSwap):
             cross_entropy_loss = torch.nn.CrossEntropyLoss(reduction="none")
             target_ids_pos_tensor = torch.tensor(target_ids_pos)  # 转换为张量
             phrase_tensor = torch.zeros(len(target_ids_pos), dtype=torch.long)  # 用于存储BPE标记的张量
-
+            #定义批次
+            batch_size=8
             for batch in self.batched_iterator(products, batch_size):
                 print(f"Batch tokens: {batch}")
                 for bpe_token in batch:
