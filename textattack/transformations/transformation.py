@@ -107,9 +107,15 @@ class Transformation(ReprMixin, ABC):
 
         for constraint in pre_transformation_constraints:
             indices_to_modify = indices_to_modify & constraint(current_text, self)
-            print(constraint)
-            print(type(constraint))
-            phrases_indices = set(phrases_indices) & constraint(current_text, self)
+            
+            # 提取 phrases_indices 中的起始索引
+            phrase_start_indices = {start for start, _, _ in phrases_indices}
+            
+            # 计算不可以被修改的单词索引
+            unmodifiable_indices = phrase_start_indices - constraint(current_text, self)
+            
+            # 根据不可修改的起始索引过滤 phrases_indices
+            phrases_indices = {phrase for phrase in phrases_indices if phrase[0] not in unmodifiable_indices}
 
         
         
