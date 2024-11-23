@@ -351,3 +351,9 @@ def check_if_punctuations(word):
         if c not in string.punctuation:
             return False
     return True
+
+
+def is_phrase(text):
+    """Check if the given text is a phrase, i.e., contains more than one word."""
+    words = words_from_text(text)
+    return len(words) > 1

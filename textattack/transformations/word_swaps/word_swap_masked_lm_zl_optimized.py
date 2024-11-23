@@ -601,7 +601,7 @@ class WordSwapMaskedLM_zl(WordSwap):
 
         
                     # 检查是否是完整短语
-                    if utils.is_one_word(phrase):
+                    if utils.is_phrase(phrase):
                         combination_results.append((phrase, perplexity))
                         print(f"Valid phrase: {phrase}, perplexity: {perplexity}")                        
 
