@@ -547,25 +547,57 @@ class WordSwapMaskedLM_zl(WordSwap):
             phrase_tensor = torch.zeros(len(target_ids_pos), dtype=torch.long)  # 用于存储BPE标记的张量
             #定义批次
             batch_size=8
+            # for batch in self.batched_iterator(products, batch_size):
+            #     print(f"Batch tokens: {batch}")
+            #     for bpe_token in batch:
+            #         print(f"bpe_token: {bpe_token}")
+            #         for i in range(len(bpe_token)):
+            #             phrase_tensor[i] = bpe_token[i]  # 将当前BPE标记存入phrase_tensor
+            #             print(f"phrase_tensor: {phrase_tensor}")
+
+            #     # 9. 从masked_lm_logits中选择与目标标记位置对应的logits。
+            #     logits = torch.index_select(masked_lm_logits, 0, target_ids_pos_tensor)
+            #     loss = cross_entropy_loss(logits, phrase_tensor)
+            #     perplexity = torch.exp(torch.mean(loss, dim=0)).item()  # 计算困惑度
+            #     phrase = "".join(
+            #         self._lm_tokenizer.convert_ids_to_tokens(phrase_tensor)
+            #     ).replace("##", "")  # 将BPE标记转换为短语，并去除子词标记符号
+            #     print(f"phrase: {phrase}, perplexity: {perplexity}")
+            #     # 10. 检查组合结果是否是一个完整短语。
+            #     if utils.is_one_word(phrase):
+            #         combination_results.append((phrase, perplexity))  # 存储有效组合及其困惑度
             for batch in self.batched_iterator(products, batch_size):
                 print(f"Batch tokens: {batch}")
+    
                 for bpe_token in batch:
                     print(f"bpe_token: {bpe_token}")
+        
+                    # 初始化 phrase_tensor，大小为当前短语的长度
+                    phrase_tensor = torch.zeros(len(bpe_token), dtype=torch.long)
+        
+                    # 填充 phrase_tensor
                     for i in range(len(bpe_token)):
-                        phrase_tensor[i] = bpe_token[i]  # 将当前BPE标记存入phrase_tensor
-                        print(f"phrase_tensor: {phrase_tensor}")
-
-                # 9. 从masked_lm_logits中选择与目标标记位置对应的logits。
-                logits = torch.index_select(masked_lm_logits, 0, target_ids_pos_tensor)
-                loss = cross_entropy_loss(logits, phrase_tensor)
-                perplexity = torch.exp(torch.mean(loss, dim=0)).item()  # 计算困惑度
-                phrase = "".join(
-                    self._lm_tokenizer.convert_ids_to_tokens(phrase_tensor)
-                ).replace("##", "")  # 将BPE标记转换为短语，并去除子词标记符号
-                print(f"phrase: {phrase}, perplexity: {perplexity}")
-                # 10. 检查组合结果是否是一个完整短语。
-                if utils.is_one_word(phrase):
-                    combination_results.append((phrase, perplexity))  # 存储有效组合及其困惑度
+                        phrase_tensor[i] = bpe_token[i]
+                        print(f"phrase_tensor[{i}]: {phrase_tensor[i]}")
+        
+                    # 提取 [MASK] 对应的 logits
+                    mask_positions = target_ids_pos_tensor  # 假设 target_ids_pos_tensor 已经正确匹配 `[MASK]` 的位置
+                    logits = torch.index_select(masked_lm_logits, 0, mask_positions)
+                    print(f"Logits shape: {logits.shape}, Phrase tensor: {phrase_tensor}")
+        
+                    # 计算困惑度
+                    loss = cross_entropy_loss(logits, phrase_tensor)
+                    perplexity = torch.exp(torch.mean(loss)).item()
+                    print(f"Perplexity: {perplexity}")
+        
+                    # 将 BPE 转换为短语
+                    phrase = "".join(self._lm_tokenizer.convert_ids_to_tokens(phrase_tensor)).replace("##", "")
+                    print(f"Phrase: {phrase}")
+        
+                    # 检查是否是完整短语
+                    if utils.is_one_word(phrase):
+                        combination_results.append((phrase, perplexity))
+                        print(f"Valid phrase: {phrase}, perplexity: {perplexity}")                        
 
             print(f"combination_results: {combination_results}")
 
