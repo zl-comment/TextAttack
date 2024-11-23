@@ -549,6 +549,7 @@ class WordSwapMaskedLM_zl(WordSwap):
             for bpe_tokens in products:
                 for i in range(len(bpe_tokens)):
                     phrase_tensor[i] = bpe_tokens[i]  # 将当前BPE标记存入phrase_tensor
+                    print(f"phrase_tensor: {phrase_tensor}")
 
                 # 9. 从masked_lm_logits中选择与目标标记位置对应的logits。
                 logits = torch.index_select(masked_lm_logits, 0, target_ids_pos_tensor)
@@ -561,6 +562,7 @@ class WordSwapMaskedLM_zl(WordSwap):
                 # 10. 检查组合结果是否是一个完整短语。
                 if utils.is_one_word(phrase):
                     combination_results.append((phrase, perplexity))  # 存储有效组合及其困惑度
+
             print(f"combination_results: {combination_results}")
 
             # 11. 对组合结果按困惑度排序，以获取前K个结果。
