@@ -68,26 +68,28 @@ class Transformation(ReprMixin, ABC):
             # relevant_text = " ".join(current_text.words[i] for i in indices_to_modify)
             # print(" relevant_text:", relevant_text)
             doc = self.nlp(current_text.text)
-            # 创建一个不包含符号的 token 列表
-            non_punct_tokens = [token for token in doc if token.pos_ != "PUNCT"]
+            # 创建一个不包含符号的 token 列表，同时记录原始索引
+            non_punct_tokens_with_indices = [(token, token.i) for token in doc if token.pos_ != "PUNCT"]
             covered_indices = set()
+
+            # 提取名词短语
             for chunk in doc.noun_chunks:
-                    phrases_indices.add((chunk.start, chunk.end, "noun-phrase"))
-                    covered_indices.update(range(chunk.start, chunk.end))
+                phrases_indices.add((chunk.start, chunk.end, "noun-phrase"))
+                covered_indices.update(range(chunk.start, chunk.end))
 
             # 提取动词短语和固定表达式
-            for token in non_punct_tokens:
+            for token, original_index in non_punct_tokens_with_indices:
                 if token.pos_ == "VERB":
-                    phrases_indices.add((token.i, token.i + 1, "verb-phrase"))
-                    covered_indices.add(token.i)
+                    phrases_indices.add((original_index, original_index + 1, "verb-phrase"))
+                    covered_indices.add(original_index)
                 elif token.dep_ == "fixed":
-                    phrases_indices.add((token.i, token.i + 1, "fixed-expression"))
-                    covered_indices.add(token.i)
+                    phrases_indices.add((original_index, original_index + 1, "fixed-expression"))
+                    covered_indices.add(original_index)
 
             # 添加未覆盖的单词
-            for token in non_punct_tokens:
-                if token.i not in covered_indices:
-                    phrases_indices.add((token.i, token.i + 1, "single-word"))
+            for token, original_index in non_punct_tokens_with_indices:
+                if original_index not in covered_indices:
+                    phrases_indices.add((original_index, original_index + 1, "single-word"))
 
             # 按 token 序号排序
             phrases_indices = sorted(phrases_indices, key=lambda x: x[0])
