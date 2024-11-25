@@ -205,7 +205,7 @@ class WordSwapMaskedLM_zl(WordSwap):
     def _fitness_function(self, individual, id_preds, target_ids_pos, masked_lm_logits):
         phrase_tensor = torch.tensor(individual)
         cross_entropy_loss = torch.nn.CrossEntropyLoss(reduction="none")
-        target_ids_pos_tensor = torch.tensor(target_ids_pos)
+        target_ids_pos_tensor = torch.tensor(target_ids_pos, dtype=torch.int64)
         logits = torch.index_select(masked_lm_logits, 0, target_ids_pos_tensor)
         loss = cross_entropy_loss(logits, phrase_tensor)
         perplexity = torch.exp(torch.mean(loss)).item()
