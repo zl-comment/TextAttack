@@ -69,6 +69,7 @@ class WordSwapMaskedLM_zl(WordSwap):
         **kwargs,
     ):
         super().__init__(**kwargs)
+        self.crossover_prob = 0.5
         self.population_size=20 #基础种群个数
         self.method = method
         self.max_length = max_length
