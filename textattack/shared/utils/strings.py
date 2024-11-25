@@ -71,7 +71,6 @@ def default_class_repr(self):
             extra_str = f"({extra_str})"
         else:
             extra_str = ""
-        extra_str = extra_str.format(**self.__dict__)
     else:
         extra_str = ""
     return f"{self.__class__.__name__}{extra_str}"
@@ -352,8 +351,10 @@ def check_if_punctuations(word):
             return False
     return True
 
-
+#检查是否是短语
 def is_phrase(text):
     """Check if the given text is a phrase, i.e., contains more than one word."""
+    if any(not char.isalpha() and not char.isspace() for char in text):
+        return False
     words = words_from_text(text)
     return len(words) > 1
