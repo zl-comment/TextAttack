@@ -510,6 +510,8 @@ class AttackedText:
         perturbed_input = OrderedDict(
             zip(self._text_input.keys(), perturbed_input_texts)
         )
+        print("perturbed_input", perturbed_input)
+        print("attack_attrs", new_attack_attrs)
         return AttackedText(perturbed_input, attack_attrs=new_attack_attrs)
 
     def words_diff_ratio(self, x: AttackedText) -> float:
@@ -577,8 +579,8 @@ class AttackedText:
             print("i", i, "len(words)", len(words))
             if (i < 0) or (i >= len(words)):
                 raise ValueError(f"Cannot assign phrase at index {i}")
-            words[i] = new_phrase
-        return self.generate_new_attacked_text(words)
+            words[i] = new_phrase #已经替换成功了
+        return self.generate_new_attacked_text(words) #添加属性并且使得成为attacktext类
 
     @property
     def tokenizer_input(self) -> Tuple[str]:
