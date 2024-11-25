@@ -194,7 +194,7 @@ class WordSwapMaskedLM_zl(WordSwap):
 
         return replacement_words
         
-     def _generate_initial_population(self, id_preds, target_ids_pos, max_length):
+    def _generate_initial_population(self, id_preds, target_ids_pos, max_length):
         population = []
         for _ in range(self.population_size):
             individual = [random.choice(id_preds[i]) for i in target_ids_pos]
