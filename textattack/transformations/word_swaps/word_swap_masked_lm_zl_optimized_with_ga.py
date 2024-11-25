@@ -202,6 +202,7 @@ class WordSwapMaskedLM_zl(WordSwap):
         for _ in range(self.population_size):
             individual = [random.choice(id_preds[i]) for i in target_ids_pos]
             population.append(individual)
+        print(f"Initial population generated: {population}")  # Debug output
         return population
 
     def _fitness_function(self, individual, id_preds, target_ids_pos, masked_lm_logits):
@@ -212,23 +213,28 @@ class WordSwapMaskedLM_zl(WordSwap):
         logits = logits.float()
         loss = cross_entropy_loss(logits, phrase_tensor)
         perplexity = torch.exp(torch.mean(loss)).item()
+        print(f"Fitness for individual {individual}: {perplexity}")  # Debug output
         return perplexity
 
     def _select_parents(self, population, id_preds, target_ids_pos, masked_lm_logits):
         fitness_scores = [self._fitness_function(individual, id_preds, target_ids_pos, masked_lm_logits) for individual in population]
         selected_parents = sorted(zip(population, fitness_scores), key=lambda x: x[1])
+        print(f"Selected parents: {[x[0] for x in selected_parents[:len(selected_parents) // 2]]}")  # Debug output
         return [x[0] for x in selected_parents[:len(selected_parents) // 2]]
 
     def _crossover(self, parent1, parent2):
         if random.random() < self.crossover_prob:
             crossover_point = random.randint(1, len(parent1) - 1)
-            return parent1[:crossover_point] + parent2[crossover_point:]
+            child = parent1[:crossover_point] + parent2[crossover_point:]
+            print(f"Crossover between {parent1} and {parent2} at {crossover_point}: {child}")  # Debug output
+            return child
         return parent1
 
     def _mutate(self, individual, id_preds, target_ids_pos):
         if random.random() < self.mutation_prob:
             mutation_point = random.randint(0, len(individual) - 1)
             mutation_value = random.choice(id_preds[mutation_point])
+            print(f"Mutating individual {individual} at {mutation_point} with {mutation_value}")  # Debug output
             individual[mutation_point] = mutation_value
         return individual
 
@@ -241,12 +247,14 @@ class WordSwapMaskedLM_zl(WordSwap):
             child = self._crossover(parent1, parent2)
             child = self._mutate(child, id_preds, target_ids_pos)
             new_population.append(child)
+            print(f"New child added to population: {child}")  # Debug output
         
         return new_population
 
     def _get_best_replacement(self, population, id_preds, target_ids_pos, masked_lm_logits):
         fitness_scores = [self._fitness_function(individual, id_preds, target_ids_pos, masked_lm_logits) for individual in population]
         best_individual = min(zip(population, fitness_scores), key=lambda x: x[1])
+        print(f"Best individual: {best_individual[0]} with fitness: {best_individual[1]}")  # Debug output
         return self._lm_tokenizer.convert_ids_to_tokens(best_individual[0])
 
     def _ga_replacement(self, current_text, start_idx, end_idx, id_preds, masked_lm_logits):
@@ -289,6 +297,7 @@ class WordSwapMaskedLM_zl(WordSwap):
 
         best_replacement = self._get_best_replacement(population, id_preds, target_ids_pos, masked_lm_logits)
         
+        print(f"Best replacement found: {best_replacement}")  # Debug output
         return best_replacement
 
     def _bert_attack_replacement_words(self, current_text, index, id_preds, masked_lm_logits):
