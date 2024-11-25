@@ -203,7 +203,7 @@ class WordSwapMaskedLM_zl(WordSwap):
         return population
 
     def _fitness_function(self, individual, id_preds, target_ids_pos, masked_lm_logits):
-        phrase_tensor = torch.tensor(individual)
+        phrase_tensor = torch.tensor(individual, dtype=torch.long)
         cross_entropy_loss = torch.nn.CrossEntropyLoss(reduction="none")
         target_ids_pos_tensor = torch.tensor(target_ids_pos, dtype=torch.int64)
         logits = torch.index_select(masked_lm_logits, 0, target_ids_pos_tensor)
