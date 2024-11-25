@@ -280,8 +280,13 @@ class WordSwapMaskedLM_zl(WordSwap):
 
         current_inputs = self._encode_text(masked_text.text)
         current_ids = current_inputs["input_ids"].tolist()[0]
-
+        
+        if start_idx == end_idx:
         # 编码目标单词或短语
+        tokens = self._lm_tokenizer.encode(
+            current_text.words[start_idx], add_special_tokens=False
+        )
+        else:
         tokens = self._lm_tokenizer.encode(
             " ".join(current_text.words[start_idx:end_idx]), add_special_tokens=False
         )
