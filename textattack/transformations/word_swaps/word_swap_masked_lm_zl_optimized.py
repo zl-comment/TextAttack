@@ -640,27 +640,27 @@ class WordSwapMaskedLM_zl(WordSwap):
             # 判断是单词还是短语
             is_single_word = (end_idx - start_idx) == 1
             target_text = current_text.words[start_idx] if is_single_word else " ".join(current_text.words[start_idx:end_idx])
-            print(f"DEBUG: Original {'word' if is_single_word else 'phrase'}: {target_text}")
+            # print(f"DEBUG: Original {'word' if is_single_word else 'phrase'}: {target_text}")
 
             # 将目标文本放入句子中，替换为 [MASK]
             mask_tokens = "[MASK]" if is_single_word else " ".join(["[MASK]"] * len(target_text.split()))
             sentence = current_text.text.replace(target_text, mask_tokens)
-            print(f"DEBUG: Sentence with masked {'word' if is_single_word else 'phrase'}: {sentence}")
+            # print(f"DEBUG: Sentence with masked {'word' if is_single_word else 'phrase'}: {sentence}")
 
             # 编码句子
             current_inputs = self._encode_text(sentence)
-            print(f"DEBUG: Encoded input for sentence: {current_inputs}")
+            # print(f"DEBUG: Encoded input for sentence: {current_inputs}")
 
             with torch.no_grad():
                 pred_probs = self._language_model(**current_inputs)[0][0]
-            print(f"DEBUG: Prediction probabilities shape: {pred_probs.shape}")
+            # print(f"DEBUG: Prediction probabilities shape: {pred_probs.shape}")
 
             top_probs, top_ids = torch.topk(pred_probs, self.max_candidates)
-            print(f"DEBUG: Top probabilities: {top_probs}, Top IDs: {top_ids}")
+            # print(f"DEBUG: Top probabilities: {top_probs}, Top IDs: {top_ids}")
 
             id_preds = top_ids.cpu()
             masked_lm_logits = pred_probs.cpu()
-            print(f"DEBUG: ID predictions: {id_preds}, Masked LM logits: {masked_lm_logits}")
+            # print(f"DEBUG: ID predictions: {id_preds}, Masked LM logits: {masked_lm_logits}")
 
             # 选择替换方法
             if self.method == "bert-attack":
@@ -682,7 +682,7 @@ class WordSwapMaskedLM_zl(WordSwap):
                 if replacement != target_text:
                     print(f"DEBUG: Replacing {'word' if is_single_word else 'phrase'} '{target_text}' with '{replacement}'")
                     transformed_text = current_text.replace_word_at_index(start_idx, replacement) if is_single_word else current_text.replace_phrase_at_index(range(start_idx, end_idx), replacement.split())
-                    print(f"DEBUG: Transformed text with replacement '{replacement}': {transformed_text}")
+                    # print(f"DEBUG: Transformed text with replacement '{replacement}': {transformed_text}")
                     transformed_texts.append(transformed_text)
 
         # print("DEBUG: All transformed texts:", transformed_texts)

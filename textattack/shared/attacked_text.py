@@ -557,7 +557,7 @@ class AttackedText:
                 word2token_mapping[i] = matched_tokens
 
         return word2token_mapping
-
+    #按照短语替换
     def replace_phrase_at_index(
         self, indices: Iterable[int], new_phrases: Iterable[str]
     ) -> AttackedText:
@@ -568,8 +568,7 @@ class AttackedText:
                 f"Cannot replace {len(new_phrases)} phrases at {len(indices)} indices."
             )
         words = self.words[:]
-        print("words", words)
-        print(words)
+        
         for i, new_phrase in zip(indices, new_phrases):
             if not isinstance(new_phrase, str):
                 raise TypeError(
