@@ -282,7 +282,7 @@ class WordSwapMaskedLM_zl(WordSwap):
             masked_lm_logits (torch.Tensor): 一个N x V的张量，包含掩蔽语言模型输出的原始logits。
         """
         # 创建掩码文本
-        if start_idx == end_idx:
+        if  end_idx-start_idx==1:
             masked_text = current_text.replace_word_at_index(start_idx, self._lm_tokenizer.mask_token)
         else:
             masked_text = current_text.replace_phrase_at_index(
@@ -292,7 +292,7 @@ class WordSwapMaskedLM_zl(WordSwap):
         current_inputs = self._encode_text(masked_text.text)
         current_ids = current_inputs["input_ids"].tolist()[0]
 
-        if start_idx == end_idx:
+        if end_idx-start_idx==1:
         # 编码目标单词或短语
             tokens = self._lm_tokenizer.encode(
             current_text.words[start_idx], add_special_tokens=False
@@ -313,7 +313,7 @@ class WordSwapMaskedLM_zl(WordSwap):
 
         for _ in range(10):
             population = self._evolve_population(population, id_preds, target_ids_pos, masked_lm_logits)
-        if start_idx == end_idx:
+        if end_idx-start_idx==1:
             best_replacement = self._get_best_replacement(population, id_preds, target_ids_pos, masked_lm_logits)
         else:
             best_replacement = self._get_best_replacement_phrase(population, id_preds, target_ids_pos, masked_lm_logits)
