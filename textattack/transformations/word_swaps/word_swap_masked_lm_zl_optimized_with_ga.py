@@ -267,7 +267,7 @@ class WordSwapMaskedLM_zl(WordSwap):
         bast_phrase_tensor = torch.zeros(len(best_individual[0]), dtype=torch.long)
         for i in range(len(best_individual[0])):
             bast_phrase_tensor[i]=best_individual[0][i]
-        bast_phrase_tokens=self._lm_tokenizer.convert_ids_to_tokens(best_individual[0])
+        bast_phrase_tokens=self._lm_tokenizer.convert_ids_to_tokens(bast_phrase_tensor)
         bast_phrase=" ".join(token.replace("##", "") for token in bast_phrase_tokens)
         return bast_phrase
 
