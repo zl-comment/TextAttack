@@ -237,6 +237,11 @@ class WordSwapMaskedLM_zl(WordSwap):
         if random.random() < self.mutation_prob:
             mutation_point = random.randint(0, len(individual) - 1)
             mutation_value = random.choice(id_preds[mutation_point])
+            # Ensure the mutation_value corresponds to a token with only alphabetic characters
+            token = self._lm_tokenizer.convert_ids_to_tokens([mutation_value])[0]
+            while not token.isalpha():
+                mutation_value = random.choice(id_preds[mutation_point])
+                token = self._lm_tokenizer.convert_ids_to_tokens([mutation_value])[0]
             print(f"Mutating individual {individual} at {mutation_point} with {mutation_value}")  # Debug output
             individual[mutation_point] = mutation_value
         return individual
