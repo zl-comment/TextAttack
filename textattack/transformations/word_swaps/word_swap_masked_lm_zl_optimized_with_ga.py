@@ -271,7 +271,7 @@ class WordSwapMaskedLM_zl(WordSwap):
         print(f"Best individual phrase: {best_individual[0]} with fitness: {best_individual[1]}")  # Debug output
         
         phrase = self._lm_tokenizer.convert_ids_to_tokens(best_individual[0])
-        return ' '.join(phrase)
+        return [' '.join(phrase)]
 
     def _ga_replacement(self, current_text, start_idx, end_idx, id_preds, masked_lm_logits):
         """使用遗传算法获取替换单词或短语。
