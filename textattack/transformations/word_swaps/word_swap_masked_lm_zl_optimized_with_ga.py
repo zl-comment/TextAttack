@@ -226,7 +226,7 @@ class WordSwapMaskedLM_zl(WordSwap):
         return [x[0] for x in selected_parents[:len(selected_parents) // 2]]
 
     def _crossover(self, parent1, parent2):
-        if random.random() < self.crossover_prob:
+        if random.random() < self.crossover_prob and len(parent1) > 1:
             crossover_point = random.randint(1, len(parent1) - 1)
             child = parent1[:crossover_point] + parent2[crossover_point:]
             print(f"Crossover between {parent1} and {parent2} at {crossover_point}: {child}")  # Debug output
@@ -288,7 +288,7 @@ class WordSwapMaskedLM_zl(WordSwap):
             masked_text = current_text.replace_word_at_index(start_idx, self._lm_tokenizer.mask_token)
         else:
             masked_text = current_text.replace_phrase_at_index(
-                range(start_idx, end_idx), [self._lm_tokenizer.mask_token] * (end_idx - start_idx)
+                range(start_idx, end_idx) , [self._lm_tokenizer.mask_token] * (end_idx - start_idx)
             )
 
         current_inputs = self._encode_text(masked_text.text)
