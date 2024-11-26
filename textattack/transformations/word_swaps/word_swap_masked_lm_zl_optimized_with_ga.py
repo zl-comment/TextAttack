@@ -203,7 +203,7 @@ class WordSwapMaskedLM_zl(WordSwap):
         print("target_ids_pos:", target_ids_pos)
         print([random.choice(id_preds[i]) for i in target_ids_pos])
         for _ in range(self.population_size):
-            individual = [random.choice(id_preds[i]) for i in target_ids_pos]
+            individual = [self._select_alphabetic_token(id_preds, i) for i in target_ids_pos]
             population.append(individual)
         print(f"Initial population generated: {population}")  # Debug output
         return population
@@ -236,12 +236,7 @@ class WordSwapMaskedLM_zl(WordSwap):
     def _mutate(self, individual, id_preds, target_ids_pos):
         if random.random() < self.mutation_prob:
             mutation_point = random.randint(0, len(individual) - 1)
-            mutation_value = random.choice(id_preds[mutation_point])
-            # Ensure the mutation_value corresponds to a token with only alphabetic characters
-            token = self._lm_tokenizer.convert_ids_to_tokens([mutation_value])[0]
-            while not token.isalpha():
-                mutation_value = random.choice(id_preds[mutation_point])
-                token = self._lm_tokenizer.convert_ids_to_tokens([mutation_value])[0]
+            mutation_value = self._select_alphabetic_token(id_preds, mutation_point)
             print(f"Mutating individual {individual} at {mutation_point} with {mutation_value}")  # Debug output
             individual[mutation_point] = mutation_value
         return individual
@@ -492,6 +487,16 @@ class WordSwapMaskedLM_zl(WordSwap):
             "max_candidates",
             "min_confidence",
         ]
+
+    def _select_alphabetic_token(self, id_preds, position):
+        """
+        Select a random alphabetic token from id_preds at the given position.
+        """
+        while True:
+            token_id = random.choice(id_preds[position])
+            token = self._lm_tokenizer.convert_ids_to_tokens([token_id])[0]
+            if token.isalpha():
+                return token_id
 
 def recover_word_case(word, reference_word):
     """Makes the case of `word` like the case of `reference_word`.
