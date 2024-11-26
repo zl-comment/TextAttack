@@ -260,6 +260,16 @@ class WordSwapMaskedLM_zl(WordSwap):
         print(f"Best individual: {best_individual[0]} with fitness: {best_individual[1]}")  # Debug output
         return self._lm_tokenizer.convert_ids_to_tokens(best_individual[0])
 
+    def _get_best_replacement_phrase(self, population, id_preds, target_ids_pos, masked_lm_logits):
+        fitness_scores = [self._fitness_function(individual, id_preds, target_ids_pos, masked_lm_logits) for individual in population]
+        best_individual = min(zip(population, fitness_scores), key=lambda x: x[1])
+        print(f"Best individual: {best_individual[0]} with fitness: {best_individual[1]}")  # Debug output
+        for i in range(len(best_individual[0])):
+            bast_phrase[i]=best_individual[0][i]
+        bast_phrase_tokens=self._lm_tokenizer.convert_ids_to_tokens(best_individual[0])
+        bast_phrase=" ".join(token.replace("##", "") for token in bast_phrase_tokens)
+        return bast_phrase
+
     def _ga_replacement(self, current_text, start_idx, end_idx, id_preds, masked_lm_logits):
         """使用遗传算法获取替换单词或短语。
 
@@ -302,8 +312,11 @@ class WordSwapMaskedLM_zl(WordSwap):
 
         for _ in range(10):
             population = self._evolve_population(population, id_preds, target_ids_pos, masked_lm_logits)
-
-        best_replacement = self._get_best_replacement(population, id_preds, target_ids_pos, masked_lm_logits)
+        if start_idx == end_idx:
+            best_replacement = self._get_best_replacement(population, id_preds, target_ids_pos, masked_lm_logits)
+        else:
+            best_replacement = self._get_best_replacement_phrase(population, id_preds, target_ids_pos, masked_lm_logits)
+        
         
         print(f"Best replacement found: {best_replacement}")  # Debug output
         return best_replacement
