@@ -263,7 +263,7 @@ class WordSwapMaskedLM_zl(WordSwap):
     def _get_best_replacement_phrase(self, population, id_preds, target_ids_pos, masked_lm_logits):
         fitness_scores = [self._fitness_function(individual, id_preds, target_ids_pos, masked_lm_logits) for individual in population]
         best_individual = min(zip(population, fitness_scores), key=lambda x: x[1])
-        print(f"Best individual: {best_individual[0]} with fitness: {best_individual[1]}")  # Debug output
+        print(f"Best individual phrase: {best_individual[0]} with fitness: {best_individual[1]}")  # Debug output
         bast_phrase_tensor = torch.zeros(len(best_individual[0]), dtype=torch.long)
         for i in range(len(best_individual[0])):
             bast_phrase_tensor[i]=best_individual[0][i]
