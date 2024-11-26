@@ -284,7 +284,7 @@ class WordSwapMaskedLM_zl(WordSwap):
             masked_lm_logits (torch.Tensor): 一个N x V的张量，包含掩蔽语言模型输出的原始logits。
         """
         # 创建掩码文本
-        combination_results = []  # 存储组合结果
+        
         if  start_idx == end_idx:
             masked_text = current_text.replace_word_at_index(start_idx, self._lm_tokenizer.mask_token)
         else:
@@ -321,9 +321,9 @@ class WordSwapMaskedLM_zl(WordSwap):
         else:
             best_replacement = self._get_best_replacement_phrase(population, id_preds, target_ids_pos, masked_lm_logits)
         
-        combination_results.append(best_replacement)
-        print(f"Best replacement found: {combination_results}")  # Debug output
-        return combination_results
+        
+        print(f"Best replacement found: {best_replacement}")  # Debug output
+        return best_replacement
 
     def _bert_attack_replacement_words(self, current_text, index, id_preds, masked_lm_logits):
         return self._ga_replacement(current_text, index, index, id_preds, masked_lm_logits)
