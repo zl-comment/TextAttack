@@ -471,7 +471,7 @@ class WordSwapMaskedLM_zl(WordSwap):
                     current_text, start_idx, end_idx
                 )
 
-            # print(f"DEBUG: Replacement {'words' if is_single_word else 'phrases'}: {replacement_items}")
+            print(f"DEBUG: Replacement {'words' if is_single_word else 'phrases'}: {replacement_items}")
             for replacement in replacement_items:
                 replacement = replacement.strip("Ġ")
                 if replacement != target_text:
