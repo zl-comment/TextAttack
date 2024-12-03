@@ -83,9 +83,11 @@ class WordSwapMaskedLM_zl(WordSwap):
         #加载预训练的模型的tokenizer和model
         if isinstance(masked_language_model, str):
             masked_language_model_cache = LocalPathConfig.BERT_BASE_UNCASED
+            TRAIN_MODEL=LocalPathConfig.BERT_BASE_UNCASED_TRAIN
             if os.path.exists(masked_language_model_cache):  # 如果是本地路径
                 print(f"Loading local model from {masked_language_model_cache}")
-                self._language_model = AutoModelForMaskedLM.from_pretrained(masked_language_model_cache)
+                print(f"Loading local train model from {TRAIN_MODEL}")
+                self._language_model = AutoModelForMaskedLM.from_pretrained(TRAIN_MODEL)
                 self._lm_tokenizer = AutoTokenizer.from_pretrained(masked_language_model_cache, use_fast=True)
             else:  # 从Hugging Face加载模型
                 print(f"Loading model from Hugging Face: {masked_language_model}")
