@@ -16,7 +16,7 @@ from textattack.shared import utils
 from .word_swap import WordSwap
 import os
 from textattack import LocalPathConfig
-
+from nltk.corpus import wordnet
 class WordSwapMaskedLM_zl(WordSwap):
 
     def _clear_memory(self):
@@ -88,7 +88,7 @@ class WordSwapMaskedLM_zl(WordSwap):
                 print(f"Loading local model from {masked_language_model_cache}")
                 print(f"Loading local train model from {TRAIN_MODEL}")
                 self._language_model = AutoModelForMaskedLM.from_pretrained(TRAIN_MODEL)
-                self._lm_tokenizer = AutoTokenizer.from_pretrained(masked_language_model_cache, use_fast=True)
+                self._lm_tokenizer = AutoTokenizer.from_pretrained(TRAIN_MODEL, use_fast=True)
             else:  # 从Hugging Face加载模型
                 print(f"Loading model from Hugging Face: {masked_language_model}")
                 self._language_model = AutoModelForMaskedLM.from_pretrained(masked_language_model)
@@ -228,11 +228,45 @@ class WordSwapMaskedLM_zl(WordSwap):
         return [x[0] for x in selected_parents[:len(selected_parents) // 2]]
 
     def _crossover(self, parent1, parent2):
+        print("crosspver:", parent1, parent2)
         if random.random() < self.crossover_prob and len(parent1) > 1:
             crossover_point = random.randint(1, len(parent1) - 1)
-            child = parent1[:crossover_point] + parent2[crossover_point:]
-            print(f"Crossover between {parent1} and {parent2} at {crossover_point}: {child}")  # Debug output
-            return child
+            
+            # 获取两个父代在交叉点的词的ID
+            word1_id = parent1[crossover_point]
+            word2_id = parent2[crossover_point]
+            
+            # 将tensor ID转换为实际的词
+            word1_str = self._lm_tokenizer.decode([word1_id])
+            word2_str = self._lm_tokenizer.decode([word2_id])
+            
+            # 使用这两个ID创建输入序列
+            input_ids = torch.tensor([[word1_id, word2_id]], device=utils.device)
+            
+            # 使用BERT进行预测
+            with torch.no_grad():
+                outputs = self._language_model(input_ids)
+                predictions = outputs.logits
+            
+            # 获取top_k个预测结果
+            top_k = min(10, self.max_candidates)
+            predicted_tokens = torch.topk(predictions[0, 0], top_k)  # 预测第一个位置的词
+            
+            # 解码预测的token为实际的词
+            candidates = []
+            for token_id in predicted_tokens.indices:
+                word = self._lm_tokenizer.decode([token_id])
+                if word.strip() and token_id not in [word1_id, word2_id]:  # 使用ID比较
+                    candidates.append(token_id.item())  # 保存ID而不是词
+            
+            # 如果有候选词，随机选择一个
+            if candidates:
+                new_id = random.choice(candidates)
+                child = parent1.copy()
+                child[crossover_point] = torch.tensor(new_id)  # 使用tensor形式保存
+                print(f"Crossover generated new word '{self._lm_tokenizer.decode([new_id])}' from parents '{word1_str}' and '{word2_str}'")
+                return child
+                
         return parent1
 
     def _mutate(self, individual, id_preds, target_ids_pos):
