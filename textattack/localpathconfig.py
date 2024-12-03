@@ -16,6 +16,8 @@ class LocalPathConfig:
 
     WORDENBEDDINGS = os.path.abspath(os.path.join(current_dir, '..\\..\\word_embeddings'))
 
+    BERT_BASE_UNCASED_TRAIN = os.path.abspath(os.path.join(current_dir, '..\\..\\promptbench\\test\\trained_MLM_model'))
+
     #############################################################LINUX##############################################################
     # bert-base-uncased
     BERT_BASE_UNCASED_L = os.path.abspath(os.path.join(current_dir, '../../google/bert-base-uncased'))
@@ -33,3 +35,4 @@ if __name__ == "__main__":
     print("UNIVERSAL_SENTENCE_ENCODER:", LocalPathConfig.UNIVERSAL_SENTENCE_ENCODER)
     print("UNIVERSAL_SENTENCE_ENCODER_LARGE:", LocalPathConfig.UNIVERSAL_SENTENCE_ENCODER_LARGE)
     print("WORDENBEDDINGS:", LocalPathConfig.WORDENBEDDINGS)
+    print("BERT_BASE_UNCASED_TRAIN:", LocalPathConfig.BERT_BASE_UNCASED_TRAIN)
