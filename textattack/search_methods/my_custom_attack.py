@@ -106,7 +106,11 @@ class MyCustomSearchMethod(SearchMethod):
         cur_result = initial_result
 
         results = None
-        
+        phrases_indices_to_order = sorted(
+        phrases_indices_to_order, 
+        key=lambda x: (x[0], x[1])  # 先按起始索引，再按结束索引
+        )
+        print("phrases_indices_to_order:",phrases_indices_to_order,type(phrases_indices_to_order))
         # 按照 phrases_indices_to_order 的顺序进行替换
         while i < len(phrases_indices_to_order) and not search_over:
             # 获取在当前索引位置的转换候选项
