@@ -29,4 +29,4 @@ from .word_swap_change_name import WordSwapChangeName
 from .word_swap_gradient_based import WordSwapGradientBased
 
 #new
-from .word_swap_masked_lm_zl_optimized_with_ga_culd_new import WordSwapMaskedLM_zl
+from .word_swap_masked_lm_zl_optimized_with_ga_culd_new_xiugai import WordSwapMaskedLM_zl
